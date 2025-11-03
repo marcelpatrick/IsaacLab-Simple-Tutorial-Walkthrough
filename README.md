@@ -8,7 +8,7 @@ from: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/index.h
 ## Classes and Configs
 Source: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/api_env_design.html
 
-** When following the documentation, "isaac_lab_tutorial" should be replaced by your project name, in this case "myProject"
+**When following the documentation, "isaac_lab_tutorial" should be replaced by your project name, in this case "myProject"**
 
 - Open an Ubuntu terminal
 - Activate the conda environment created with Python 3.11 ```conda activate env_isaaclab```
@@ -17,7 +17,7 @@ Source: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/api_e
   - Open the config file (using Sublime in this example): ```subl myproject_env_cfg.py```
   - If you don't have sublime enabled, run: ```sudo snap install sublime-text --classic```
 
-**-> you can also navigate to these folders on windows explorer by starting at the path: ```\\wsl.localhost\Ubuntu-22.04\root\IsaacSim\myProject```**
+**-> you can also navigate to these folders on Windows Explorer by starting at the path: ```\\wsl.localhost\Ubuntu-22.04\root\IsaacSim\myProject```**
 
 ## Environment Design
 Source: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/technical_env_design.html
@@ -38,11 +38,12 @@ JETBOT_CONFIG = ArticulationCfg(
     actuators={"wheel_acts": ImplicitActuatorCfg(joint_names_expr=[".*"], damping=None, stiffness=None)},
 )
 ```
-- Save it with Ctrl X, Yes. The only purpose of this file is to define a unique scope in which to save our configurations.
+- Save it with Ctrl X, Yes.
+- The only purpose of this file is to define a unique path in which to save our configurations.
 
 ### Environment Configuration
-- Navigate to ```~/IsaacSim/myProject/source/myProject/myProject/tasks/direct/myproject#```
-- Open myproject_env_cfg.py and replace its contenxt with
+- Navigate to ```~/IsaacSim/myProject/source/myProject/myProject/tasks/direct/myproject```
+- Open myproject_env_cfg.py and replace its content with
 ```
 from isaac_lab_tutorial.robots.jetbot import JETBOT_CONFIG
 
@@ -69,8 +70,8 @@ class IsaacLabTutorialEnvCfg(DirectRLEnvCfg):
     scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=100, env_spacing=4.0, replicate_physics=True)
     dof_names = ["left_wheel_joint", "right_wheel_joint"]
 ```
-- **-> replace ```class MyprojectEnvCfg(DirectRLEnvCfg):``` with the name of your project, in this case ```class MyprojectEnvCfg(DirectRLEnvCfg):```**
-- **-> replace ```from isaac_lab_tutorial.robots.jetbot import JETBOT_CONFIG``` with 
+- **-> replace ```class IsaacLabTutorialEnvCfg(DirectRLEnvCfg):``` with the name of your project, in this case ```class MyprojectEnvCfg(DirectRLEnvCfg):```**
+- **-> replace ```from isaac_lab_tutorial.robots.jetbot import JETBOT_CONFIG``` with the name of your project, in this case: ```from myProject.robots.jetbot import JETBOT_CONFIG```
 - Save and close
 - Here we have, effectively, the same environment configuration as before, but with the Jetbot instead of the cartpole
 
@@ -108,8 +109,29 @@ def _pre_physics_step(self, actions: torch.Tensor) -> None:
 def _apply_action(self) -> None:
     self.robot.set_joint_velocity_target(self.actions, joint_ids=self.dof_idx)
 ```
-- _pre_physics_step: getting data from the policy being trained and applying updates to the physics simulation
+- _pre_physics_step: getting data from the policy being trained and applying updates to the physics simulation ( lets us detach the process of getting data from the policy being trained and applying updates to the physics simulation)
 - The _apply_action method is where those actions are actually applied to the robots on the stage
+
+- Replace the contents of _get_observations and _get_rewards with the following
+```
+def _get_observations(self) -> dict:
+    self.velocity = self.robot.data.root_com_lin_vel_b
+    observations = {"policy": self.velocity}
+    return observations
+
+def _get_rewards(self) -> torch.Tensor:
+    total_reward = torch.linalg.norm(self.velocity, dim=-1, keepdim=True)
+    return total_reward
+```
+
+- ```def _get_observations(self) -> dict:```
+  - We are applying actions to all robots on the stage at once! Here, when we need to get the observations, we need the body frame velocity for all robots on the stage, and so access ```self.robot.data``` to get that information.
+  - root_com_lin_vel_b is a property of the ArticulationData that handles the conversion of the center-of-mass linear velocity from the world frame to the body frame.
+  - it returns a dictionary composed of a policy: velocity value pair
+ 
+- ```def _get_rewards(self) -> torch.Tensor:```
+  - For each clone of the scene, we need to compute a reward value and return it as a tensor of shape [num_envs, 1]
+  - As a place holder, we will make the reward the magnitude of the linear velocity of the Jetbot in the body frame. With this reward and observation space, the agent should learn to drive the Jetbot forward or backward, with the direction determined at random shortly after training starts.
 
 - Replace the contents of _get_dones and _reset_idx with the following.
 ```
@@ -128,5 +150,12 @@ def _reset_idx(self, env_ids: Sequence[int] | None):
 
     self.robot.write_root_state_to_sim(default_root_state, env_ids)
 ```
+
+-```def _get_dones(self)```
+  - mark which environments need to be reset and why
+  -  an “episode” ends in one of two ways: either the agent reaches a terminal state, or the episode reaches a maximum duration
+    
+-```def _reset_idx(self, env_ids: Sequence[int] | None):```
+  -   indicating which scenes need to be reset, and resets them
 
 ### Training the Jetbot: Ground Truth
