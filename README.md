@@ -1,7 +1,7 @@
 # IsaacLab-Simple-Tutorial-Walkthrough
 from: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/index.html 
 
-## Pre-Requisites
+## 0- Pre-Requisites
 - Before starting, make sure you have completed the prerequisites i.e. creating a virtual environment and a project with IsaacSim and IsaacLab installed as well as all other libraries e.g. Python 3.11 etc.
 - You can find the step by step tutorial for the prerequisites here: https://github.com/marcelpatrick/Step-by-step-IsaacLab-Installation_2/blob/main/README.md 
 
@@ -19,7 +19,8 @@ Source: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/api_e
 
 **-> you can also navigate to these folders on Windows Explorer by starting at the path: ```\\wsl.localhost\Ubuntu-22.04\root\IsaacSim\myProject```**
 
-## Environment Design
+## 1- Environment Design
+- Defining the environment
 Source: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/technical_env_design.html
 
 ### Define the Robot
@@ -158,4 +159,140 @@ def _reset_idx(self, env_ids: Sequence[int] | None):
 -```def _reset_idx(self, env_ids: Sequence[int] | None):```
   -   indicating which scenes need to be reset, and resets them
 
-### Training the Jetbot: Ground Truth
+## 2- Training the Jetbot: Ground Truth
+- Modify rewards in order to train a policy to act as a controller for the Jetbot.
+- As a user, we would like to use Reinforcement Learning be able to specify the desired direction for the Jetbot to drive, and have the wheels turn such that the robot drives in that specified direction as fast as possible
+
+### Expanding the environment
+- Create the logic for setting commands for each Jetbot on the stage
+- Each command will be a unit vector, and we need one for every clone of the robot on the stage, which means a tensor of shape [num_envs, 3] (3D vectors)
+
+#### Visualization Markers
+  - Set up ```VisualizationMarkers``` to visualize the training in action. like Debug visuals
+  - define the marker config and then instantiate the markers with that config
+  - Add the following to the global scope of isaac_lab_tutorial_env.py:
+    
+  - include import libraries in the beginning
+```
+from isaaclab.markers import VisualizationMarkers, VisualizationMarkersCfg
+from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
+import isaaclab.utils.math as math_utils
+```
+- include a new function **outside and before** the MyprojectEnv class:
+```
+def define_markers() -> VisualizationMarkers:
+    """Define markers with various different shapes."""
+    marker_cfg = VisualizationMarkersCfg(
+        prim_path="/Visuals/myMarkers",
+        markers={
+                "forward": sim_utils.UsdFileCfg(
+                    usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/UIElements/arrow_x.usd",
+                    scale=(0.25, 0.25, 0.5),
+                    visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 1.0, 1.0)),
+                ),
+                "command": sim_utils.UsdFileCfg(
+                    usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/UIElements/arrow_x.usd",
+                    scale=(0.25, 0.25, 0.5),
+                    visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.0, 0.0)),
+                ),
+        },
+    )
+    return VisualizationMarkers(cfg=marker_cfg)
+```
+
+- Setup data for tracking the commands as well as the marker positions and rotations. Replace the contents of _setup_scene with the following
+```
+def _setup_scene(self):
+    self.robot = Articulation(self.cfg.robot_cfg)
+    # add ground plane
+    spawn_ground_plane(prim_path="/World/ground", cfg=GroundPlaneCfg())
+    # clone and replicate
+    self.scene.clone_environments(copy_from_source=False)
+    # add articulation to scene
+    self.scene.articulations["robot"] = self.robot
+    # add lights
+    light_cfg = sim_utils.DomeLightCfg(intensity=2000.0, color=(0.75, 0.75, 0.75))
+    light_cfg.func("/World/Light", light_cfg)
+
+    self.visualization_markers = define_markers()
+
+    # setting aside useful variables for later
+    self.up_dir = torch.tensor([0.0, 0.0, 1.0]).cuda()
+    self.yaws = torch.zeros((self.cfg.scene.num_envs, 1)).cuda()
+    self.commands = torch.randn((self.cfg.scene.num_envs, 3)).cuda()
+    self.commands[:,-1] = 0.0
+    self.commands = self.commands/torch.linalg.norm(self.commands, dim=1, keepdim=True)
+
+    # offsets to account for atan range and keep things on [-pi, pi]
+    ratio = self.commands[:,1]/(self.commands[:,0]+1E-8)
+    gzero = torch.where(self.commands > 0, True, False)
+    lzero = torch.where(self.commands < 0, True, False)
+    plus = lzero[:,0]*gzero[:,1]
+    minus = lzero[:,0]*lzero[:,1]
+    offsets = torch.pi*plus - torch.pi*minus
+    self.yaws = torch.atan(ratio).reshape(-1,1) + offsets.reshape(-1,1)
+
+    self.marker_locations = torch.zeros((self.cfg.scene.num_envs, 3)).cuda()
+    self.marker_offset = torch.zeros((self.cfg.scene.num_envs, 3)).cuda()
+    self.marker_offset[:,-1] = 0.5
+    self.forward_marker_orientations = torch.zeros((self.cfg.scene.num_envs, 4)).cuda()
+    self.command_marker_orientations = torch.zeros((self.cfg.scene.num_envs, 4)).cuda()
+```
+  - Define the visualize markers function **inside** the ```class MyprojectEnv(DirectRLEnv)``` and after def _setup_scene
+```
+ def _visualize_markers(self):
+    # get marker locations and orientations
+    self.marker_locations = self.robot.data.root_pos_w
+    self.forward_marker_orientations = self.robot.data.root_quat_w
+    self.command_marker_orientations = math_utils.quat_from_angle_axis(self.yaws, self.up_dir).squeeze()
+
+    # offset markers so they are above the jetbot
+    loc = self.marker_locations + self.marker_offset
+    loc = torch.vstack((loc, loc))
+    rots = torch.vstack((self.forward_marker_orientations, self.command_marker_orientations))
+
+    # render the markers
+    all_envs = torch.arange(self.cfg.scene.num_envs)
+    indices = torch.hstack((torch.zeros_like(all_envs), torch.ones_like(all_envs)))
+    self.visualization_markers.visualize(loc, rots, marker_indices=indices)
+```
+
+- call _visualize_markers on the pre physics step
+- paste ```self._visualize_markers()``` inside
+```
+def _pre_physics_step(self, actions: torch.Tensor) -> None:
+  self.actions = actions.clone()
+  self._visualize_markers()
+```
+
+- update the _reset_idx method to account for the commands and markers
+- Replace the contents of _reset_idx with the following:
+```
+def _reset_idx(self, env_ids: Sequence[int] | None):
+    if env_ids is None:
+        env_ids = self.robot._ALL_INDICES
+    super()._reset_idx(env_ids)
+
+    # pick new commands for reset envs
+    self.commands[env_ids] = torch.randn((len(env_ids), 3)).cuda()
+    self.commands[env_ids,-1] = 0.0
+    self.commands[env_ids] = self.commands[env_ids]/torch.linalg.norm(self.commands[env_ids], dim=1, keepdim=True)
+
+    # recalculate the orientations for the command markers with the new commands
+    ratio = self.commands[env_ids][:,1]/(self.commands[env_ids][:,0]+1E-8)
+    gzero = torch.where(self.commands[env_ids] > 0, True, False)
+    lzero = torch.where(self.commands[env_ids]< 0, True, False)
+    plus = lzero[:,0]*gzero[:,1]
+    minus = lzero[:,0]*lzero[:,1]
+    offsets = torch.pi*plus - torch.pi*minus
+    self.yaws[env_ids] = torch.atan(ratio).reshape(-1,1) + offsets.reshape(-1,1)
+
+    # set the root state for the reset envs
+    default_root_state = self.robot.data.default_root_state[env_ids]
+    default_root_state[:, :3] += self.scene.env_origins[env_ids]
+
+    self.robot.write_root_state_to_sim(default_root_state, env_ids)
+    self._visualize_markers()
+```
+
+### Exploring the RL problem
