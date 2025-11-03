@@ -1,6 +1,10 @@
 # IsaacLab-Simple-Tutorial-Walkthrough
 from: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/index.html 
 
+## Pre-Requisites
+- Before starting, make sure you have completed the prerequisites i.e. creating a virtual environment and a project with IsaacSim and IsaacLab installed as well as all other libraries e.g. Python 3.11 etc.
+- You can find the step by step tutorial for the prerequisites here: https://github.com/marcelpatrick/Step-by-step-IsaacLab-Installation_2/blob/main/README.md 
+
 ## Classes and Configs
 Source: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/api_env_design.html
 
