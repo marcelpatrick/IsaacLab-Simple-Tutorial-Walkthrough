@@ -359,6 +359,7 @@ This 9-number "dashboard" gives the AI *everything* it needs to learn. It can no
 
 ### 3\. The Code, 
 
+Navigate to ~/IsaacSim/myProject/source/myProject/myProject/tasks/direct/myproject# and open myproject_env.py
 Replace the _get_observations method with the following:
 
 ```python
