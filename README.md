@@ -296,3 +296,102 @@ def _reset_idx(self, env_ids: Sequence[int] | None):
 ```
 
 ### Exploring the RL problem
+
+
+- 🎯 The Core Goal: Teaching the AI to *Drive*
+
+- The main point is to set up the problem for our Reinforcement Learning (RL) AI (the agent).
+- The agent is the AI brain, like the robot driver that observes (information about the current state + the goal) and acts based on the observation. It runs its internal logic (policy) and decides what action to take based on the difference (error) between the current state (current linear and angular velocities) and the future state (goal/command).
+- We don't want to just "teleport" the robot to a new spot. We want to teach it *how* to take the correct **actions** (like spinning its wheels) to move from its **current state** (where it is now) to a **desired state** (the goal).
+- The AI learns by trial and error. It needs to see the "error" (the difference between its current state and its goal) to learn which actions reduce that error.
+- With **Reinforcement Learning**, it tells the agent what to do by: if error (difference between initial state and command) increases after action -> negative reinforcement. If error decreases after action -> positive reinforcement. 
+
+#### 0\. The "Current Observation Space": (a 6-dimensional Observation vector)
+Before updating this observation vector, the AI only knew how it was currently moving. This was its **"6-dimensional velocity vector"**:
+
+Linear Velocity X (how fast it's moving forward/backward)
+
+Linear Velocity Y (how fast it's moving left/right)
+
+Linear Velocity Z (how fast it's moving up/down)
+
+Angular Velocity X (how fast it's spinning around the X-axis)
+
+Angular Velocity Y (how fast it's spinning around the Y-axis)
+
+Angular Velocity Z (how fast it's spinning around the Z-axis)
+
+#### 1\. The "Desired Future State"/Command Vector: The AI's Goal (a 3-dimensional Command vector)
+  * **The Command:** Go to a new location, update robots linear velocity (x, y, z)
+  * This is just a "goal" or "GPS instruction" we give the AI. In this case, it's a **"unit vector,"** which is simply a 3-number list (e.g., `[1, 0, 0]`) that points in a specific direction with a length of 1 - just one arrow pointing in one direction.
+
+#### 2\. The "Future Observation Space": The AI's Dashboard (a 9-dimensional Observation vector)
+  * This is the *entire set of information* the AI gets to see at every single step: it's current state and the desired state. Think of it as the AI's dashboard. This is the *only* thing it knows about the world.
+  * we need to change the observation space to 9 numbers.
+  * Initial observation vector: linear velocity (3 dimensions) + angular velocity (3 dimension) + command vector (3 dimension) = updated observation vector (9 dimensions)
+  * If we were to update both linear and angular velocity it would result in a new observation vector with 12 dimensions. 
+
+### 3\. (The "Error" Calculation)
+To learn, the AI needs to compare two separate things:
+
+1.  **"Where am I *right now*?" (The Current State)**
+2.  **"Where am I *supposed to* go?" (The Goal State)**
+
+The AI's "brain" (the policy) is like the thermostat's logic: it calculates the "error" between these two and takes an action to fix it.
+
+  * **The First 6 Numbers (Current State):** or the **"world velocity vector"**. This is the robot's "speedometer." It's a list of 6 values:
+
+      * Linear Velocity (X, Y, Z) - How fast it's moving forward/back, left/right, up/down.
+      * Angular Velocity (X, Y, Z) - How fast it's *spinning* or *tumbling*.
+      * **What if we only had this?** The AI would be "numb." It would know it's moving, but it would be "blind" to the goal. It has no "error" to correct.
+
+  * **The Next 3 Numbers (Goal State):** This is our **"command"** vector.
+
+      * **What if we only had this?** The AI would be "blind" to its own state. It would know the goal but wouldn't be able to see if its actions were actually moving it closer to that goal.
+
+By "appending the command to this vector," we are **gluing** these two lists together.
+
+**`Total Observation = [6-number Current State] + [3-number Goal State] = 9-number vector`**
+
+This 9-number "dashboard" gives the AI *everything* it needs to learn. It can now see both its state and its goal, calculate the error, and learn which actions (wheel movements) make its "Current State" numbers look more like its "Goal State" numbers.
+
+-----
+
+### 3\. The Code, 
+
+Replace the _get_observations method with the following:
+
+```python
+# This function's job is to gather all the data (observations) 
+# our AI policy needs to make a decision.
+def _get_observations(self) -> dict:
+
+    # 1. GET THE "CURRENT STATE" (Numbers 1-6)
+    #    `root_com_vel_w` stands for "root center-of-mass velocity in the world frame."
+    #    This is our 6-number "speedometer reading" (linear + angular velocity).
+    [cite_start]self.velocity = self.robot.data.root_com_vel_w [cite: 684]
+
+    # 2. A SIDE-QUEST FOR LATER (Calculating the robot's "Forward" direction)
+    #    This line is NOT part of the 9-number observation.
+    #    It's used later to calculate the REWARD.
+    #    `root_link_quat_w`: A "quaternion" is a 4-number value for a 3D rotation. This gets the robot's current rotation.
+    #    `FORWARD_VEC_B`: This is just the vector `[1, 0, 0]` (the robot's "front").
+    #    `math_utils.quat_apply`: This function applies the 3D rotation to the "front" vector.
+    #    In short: This line figures out which way the robot is *actually* pointing in the 3D world.
+    [cite_start]self.forwards = math_utils.quat_apply(self.robot.data.root_link_quat_w, self.robot.data.FORWARD_VEC_B) [cite: 685, 681]
+
+    # 3. BUILD THE "DASHBOARD" (The 9-Number Vector)
+    #    `torch.hstack` means "horizontal stack." It's the "glue."
+    #    It takes our 6-number `self.velocity` vector and our 3-number `self.commands`
+    #    vector and sticks them together, end-to-end, to make one 9-number list.
+    [cite_start]obs = torch.hstack((self.velocity, self.commands)) [cite: 686]
+
+    # 4. PACKAGE THE DATA
+    #    The RL framework expects the observations in a "dictionary" (a labeled box).
+    #    We put our 9-number list `obs` into a box labeled "policy"
+    #    so the AI's "brain" knows where to find it.
+    [cite_start]observations = {"policy": obs} [cite: 687]
+    
+    # 5. SEND IT TO THE AI
+    return observations
+```
