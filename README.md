@@ -309,17 +309,13 @@ def _reset_idx(self, env_ids: Sequence[int] | None):
 #### 0\. The "Current Observation Space": (a 6-dimensional Observation vector)
 Before updating this observation vector, the AI only knew how it was currently moving. This was its **"6-dimensional velocity vector"**:
 
-Linear Velocity X (how fast it's moving forward/backward)
+- Linear Velocity X (how fast it's moving forward/backward)
+- Linear Velocity Y (how fast it's moving left/right)
+- Linear Velocity Z (how fast it's moving up/down)
 
-Linear Velocity Y (how fast it's moving left/right)
-
-Linear Velocity Z (how fast it's moving up/down)
-
-Angular Velocity X (how fast it's spinning around the X-axis)
-
-Angular Velocity Y (how fast it's spinning around the Y-axis)
-
-Angular Velocity Z (how fast it's spinning around the Z-axis)
+- Angular Velocity X (how fast it's spinning around the X-axis)
+- Angular Velocity Y (how fast it's spinning around the Y-axis)
+- Angular Velocity Z (how fast it's spinning around the Z-axis)
 
 #### 1\. The "Desired Future State"/Command Vector: The AI's Goal (a 3-dimensional Command vector)
   * **The Command:** Go to a new location, update robots linear velocity (x, y, z)
@@ -370,7 +366,7 @@ def _get_observations(self) -> dict:
     # 1. GET THE "CURRENT STATE" (Numbers 1-6)
     #    `root_com_vel_w` stands for "root center-of-mass velocity in the world frame."
     #    This is our 6-number "speedometer reading" (linear + angular velocity).
-    [cite_start]self.velocity = self.robot.data.root_com_vel_w [cite: 684]
+    self.velocity = self.robot.data.root_com_vel_w 
 
     # 2. A SIDE-QUEST FOR LATER (Calculating the robot's "Forward" direction)
     #    This line is NOT part of the 9-number observation.
@@ -379,19 +375,19 @@ def _get_observations(self) -> dict:
     #    `FORWARD_VEC_B`: This is just the vector `[1, 0, 0]` (the robot's "front").
     #    `math_utils.quat_apply`: This function applies the 3D rotation to the "front" vector.
     #    In short: This line figures out which way the robot is *actually* pointing in the 3D world.
-    [cite_start]self.forwards = math_utils.quat_apply(self.robot.data.root_link_quat_w, self.robot.data.FORWARD_VEC_B) [cite: 685, 681]
+    self.forwards = math_utils.quat_apply(self.robot.data.root_link_quat_w, self.robot.data.FORWARD_VEC_B)
 
     # 3. BUILD THE "DASHBOARD" (The 9-Number Vector)
     #    `torch.hstack` means "horizontal stack." It's the "glue."
     #    It takes our 6-number `self.velocity` vector and our 3-number `self.commands`
     #    vector and sticks them together, end-to-end, to make one 9-number list.
-    [cite_start]obs = torch.hstack((self.velocity, self.commands)) [cite: 686]
+    obs = torch.hstack((self.velocity, self.commands)) 
 
     # 4. PACKAGE THE DATA
     #    The RL framework expects the observations in a "dictionary" (a labeled box).
     #    We put our 9-number list `obs` into a box labeled "policy"
     #    so the AI's "brain" knows where to find it.
-    [cite_start]observations = {"policy": obs} [cite: 687]
+    observations = {"policy": obs} 
     
     # 5. SEND IT TO THE AI
     return observations
