@@ -412,3 +412,8 @@ Objective: just give the AI a reward for two things:
      - If they are at a 90° angle (perpendicular), the inner product is 0.
 
 The hope is that by rewarding both of these at the same time, the AI will figure out that the best way to drive fast towards the goal.
+
+## Run
+
+- navigate to ```~/IsaacSim/myProject```
+- run ```python scripts/skrl/train.py --task=Template-Isaac-Lab-Tutorial-Direct-v0```
