@@ -327,7 +327,7 @@ Before updating this observation vector, the AI only knew how it was currently m
   * Initial observation vector: linear velocity (3 dimensions) + angular velocity (3 dimension) + command vector (3 dimension) = updated observation vector (9 dimensions)
   * If we were to update both linear and angular velocity it would result in a new observation vector with 12 dimensions. 
 
-### 3\. (The "Error" Calculation)
+#### 3\. (The "Error" Calculation)
 To learn, the AI needs to compare two separate things:
 
 1.  **"Where am I *right now*?" (The Current State)**
@@ -353,7 +353,7 @@ This 9-number "dashboard" gives the AI *everything* it needs to learn. It can no
 
 -----
 
-### 3\. The Code, 
+#### 4\. The Code, 
 
 Navigate to ~/IsaacSim/myProject/source/myProject/myProject/tasks/direct/myproject# and open myproject_env.py
 Replace the _get_observations method with the following:
@@ -392,3 +392,23 @@ def _get_observations(self) -> dict:
     # 5. SEND IT TO THE AI
     return observations
 ```
+
+### 🎯 The Core Goal: Creating a "Reward"
+This whole section is about designing the reward signal for our AI agent. The reward is like giving the AI a "cookie" (a positive number) when it does something good and a "penalty" (a negative number) when it does something bad.
+
+The AI's entire goal is to learn how to take actions that get it the most rewards over time.
+
+Objective: just give the AI a reward for two things:
+
+- 1. Forward Reward: Driving Forward: We want it to move fast towards the goal.
+     - It's the robot's speed specifically along its own "forward" X-axis.
+     - by taking the linear velocity of the robot measured taking the robot's center as a reference point: the robot's body frame (robots x,y,z coordinates) center of mass (where it can be balanced on the tip of a pencil)
+     - The robot's linear velocity is the angle between the movement of its body frame center of mass vs the world's frame (inner product between the two)
+       
+- 2. Alignment Reward: Facing the Goal: We want it to point in the direction of the command.
+     - The alignment term is the inner product between the forward vector and the command vector: when they are pointing in the same direction this term will be 1, but in the opposite direction it will be -1. We add them together to get the combined reward.
+     - If two vectors are perfectly aligned (pointing the same way), the inner product is +1.
+     - If they are perfectly misaligned (pointing opposite ways), the inner product is -1.
+     - If they are at a 90° angle (perpendicular), the inner product is 0.
+
+The hope is that by rewarding both of these at the same time, the AI will figure out that the best way to drive fast towards the goal.
