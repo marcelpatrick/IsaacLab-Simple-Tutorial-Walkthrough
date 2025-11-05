@@ -415,5 +415,8 @@ The hope is that by rewarding both of these at the same time, the AI will figure
 
 ## Run
 
-- navigate to ```~/IsaacSim/myProject```
-- run ```python scripts/skrl/train.py --task=Template-Isaac-Lab-Tutorial-Direct-v0```
+- open an Ubuntu terminal and activate the conda environment, in this case: ```conda activate env_isaaclab"
+- Navigate to ```cd /root/IsaacSim``` and run ```source _build/linux-x86_64/release/setup_conda_env.sh``` to link the IsaacLab project to the IsaacSim build so the terminal can find the IsaacSim module.
+- navigate to the projects root folder ```cd /root/IsaacSim/myProject```
+- run the training script.
+  - Replace "Template-Isaac-Lab-Tutorial-Direct-v0" with the name of your project, in this case "MyProject": ```python scripts/skrl/train.py --task=Template-Myproject-Direct-v0```
