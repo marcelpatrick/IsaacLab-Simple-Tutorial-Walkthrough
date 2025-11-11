@@ -10,7 +10,7 @@ Source: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/api_e
 
 **When following the documentation, "isaac_lab_tutorial" should be replaced by your project name, in this case "myProject"**
 
-- Open an Ubuntu terminal
+- Open Conda CLI: (on a conda cli: click on Windows search option, type “anaconda prompt”, click on it to open the cli)
 - Activate the conda environment created with Python 3.11 ```conda activate env_isaaclab```
 - Navigate to ```cd ~/IsaacSim/myProject/source/myProject/myProject/tasks/direct/myproject```
 - Check the environment configurations:
