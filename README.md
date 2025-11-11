@@ -4,14 +4,25 @@ from: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/index.h
 ## 0- Pre-Requisites
 - Before starting, make sure you have completed the prerequisites i.e. creating a virtual environment and a project with IsaacSim and IsaacLab installed as well as all other libraries e.g. Python 3.11 etc.
 - You can find the step by step tutorial for the prerequisites for Windows11 native here: https://github.com/marcelpatrick/IsaacSim-IsaacLab-installation-for-Windows-Easy-Tutorial/blob/main/README.md
-
+  
+## Activate the environment
+- Open Conda CLI: (on a conda cli: click on Windows search option, type “anaconda prompt”, click on it to open the cli)
+- Activate the conda environment created with Python 3.11 ```conda activate env_isaaclab```
+  
 ## Classes and Configs
 Source: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/api_env_design.html
 
+#### Working with the repo project: "isaac_lab_tutorial"
+
+- Navigate to ```(env_isaaclab) C:\Users\[YOUR INTERNAL PATH]\IsaacLab\source>```
+- Clone repo there ```git clone https://github.com/isaac-sim/IsaacLabTutorial.git isaac_lab_tutorial```
+- Run ```dir``` and check that isaac_lab_tutorial is there
+
+
+#### For custom project
 **When following the documentation, "isaac_lab_tutorial" should be replaced by your project name, in this case "myProject"**
 
-- Open Conda CLI: (on a conda cli: click on Windows search option, type “anaconda prompt”, click on it to open the cli)
-- Activate the conda environment created with Python 3.11 ```conda activate env_isaaclab```
+
 - Navigate to ```cd ~/IsaacSim/myProject/source/myProject/myProject/tasks/direct/myproject```
 - Check the environment configurations:
   - Open the config file (using Sublime in this example): ```subl myproject_env_cfg.py```
