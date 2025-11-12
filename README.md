@@ -95,7 +95,8 @@ from .isaac_lab_tutorial_env_cfg import IsaacLabTutorialEnvCfg
 
 # --- Environment Definition ---
 class IsaacLabTutorialEnv(DirectRLEnv):
-    # Links this environment to its configuration class
+    # cgf Links this environment to its configuration class
+    # cfg: IsaacLabTutorialEnvCfg is just an annotation that says “cfg is expected to be an instance of the class IsaacLabTutorialEnvCfg.” It throws warnings If you’re using a type checker like mypy, Pyright, or an IDE (VSCode, PyCharm)
     cfg: IsaacLabTutorialEnvCfg
 
     def __init__(self, cfg: IsaacLabTutorialEnvCfg, render_mode: str | None = None, **kwargs):
@@ -183,10 +184,7 @@ def compute_rewards(...):
     # Critical for defining what “success” means in robot learning.
 ```
 
-```cfg: IsaacLabTutorialEnvCfg```
-cfg is just an annotation that says “cfg is expected to be an instance of the class IsaacLabTutorialEnvCfg.” It throws warnings If you’re using a type checker like mypy, Pyright, or an IDE (VSCode, PyCharm)
-
-To wrap up:
+**In Brief**:
 1. The config class (IsaacLabTutorialEnvCfg) defines what exists
 – simulation settings
 – robot model
