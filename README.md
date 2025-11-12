@@ -87,7 +87,7 @@ class IsaacLabTutorialEnvCfg(DirectRLEnvCfg):
 ### 1.2- The Environment: isaac_lab_tutorial_env.py
 - In the same path ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial``` open ```isaac_lab_tutorial_env.py```
 
-```
+```python
 # --- Imports ---
 # Bring in the environment configuration we defined earlier (with sim, robot, and scene setup)
 from .isaac_lab_tutorial_env_cfg import IsaacLabTutorialEnvCfg
