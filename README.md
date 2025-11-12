@@ -7,72 +7,100 @@ from: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/index.h
 ### Pre-Requisites
 - Before starting, make sure you have completed the prerequisites i.e. creating a virtual environment and a project with IsaacSim and IsaacLab installed as well as all other libraries e.g. Python 3.11 etc.
 - You can find the step by step tutorial for the prerequisites for Windows11 native here: https://github.com/marcelpatrick/IsaacSim-IsaacLab-installation-for-Windows-Easy-Tutorial/blob/main/README.md
-  
+
 ### Activate the environment
 - Open Conda CLI: (on a conda cli: click on Windows search option, type “anaconda prompt”, click on it to open the cli)
 - Activate the conda environment created with Python 3.11 ```conda activate env_isaaclab```
 
-## 1- Understanding the main project files/scripts:
-
-### 1.1- Classes and Configs: myproject_env_cfg.py
-Source: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/api_env_design.html
-
+### Clone the Repo
 - Navigate to ```(env_isaaclab) C:\Users\[YOUR INTERNAL PATH]\IsaacLab\source>``` (either on CLI or Windows explorer)
 - Clone repo there ```git clone https://github.com/isaac-sim/IsaacLabTutorial.git isaac_lab_tutorial```
 - Run ```dir``` and check that isaac_lab_tutorial is there
+
+## 1- Understanding the main project files/scripts:
+
+### 1.1- Classes and Configs: Environment Configuration: isaac_lab_tutorial_env_cfg.py
+Source: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/api_env_design.html
+
+- This file defines the configuration class for the Jetbot environment
+- tells Isaac Lab how to build the virtual world where the Jetbot robot will live, move, and learn. defines what the world looks like
+- It doesn’t run the simulation or training itself — it just describes all the parts of that world.
+- It defines
+  - which robot to load (Jetbot),
+  - how the physics simulation should behave,
+  - how long each episode should last,
+  - how many parallel environments to create for training, and
+  - what the robot’s control and observation spaces look like.
+  
 - Navigate to ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial```
 - Check the environment configurations:
-  - Open the config file. ```myproject_env_cfg.py```
+  - Open the config file. ```isaac_lab_tutorial_env_cfg```
   - Here is a description of each component of this file:
 ```python
-from isaac_lab_tutorial.robots.jetbot import JETBOT_CONFIG
+# --- Imports ---
+# Bring in Isaac Lab modules and the predefined Cartpole robot configuration
+from isaaclab_assets.robots.cartpole import CARTPOLE_CFG          # Cartpole robot configuration (predefined)
+from isaaclab.assets import ArticulationCfg                       # Describes robot joints and physical setup
+from isaaclab.envs import DirectRLEnvCfg                          # Base configuration for RL environments
+from isaaclab.scene import InteractiveSceneCfg                    # Describes how the simulation world is arranged
+from isaaclab.sim import SimulationCfg                             # Configures physics simulation settings
+from isaaclab.utils import configclass                             # Marks this class as a configuration class for Isaac Lab
 
-from isaaclab.assets import ArticulationCfg
-from isaaclab.envs import DirectRLEnvCfg
-from isaaclab.scene import InteractiveSceneCfg
-from isaaclab.sim import SimulationCfg
-from isaaclab.utils import configclass
-
-# @configclass is a decorator that marks this class as a “configuration” so Isaac Lab knows how to use it when building or cloning multiple training environments.
 
 @configclass
 class IsaacLabTutorialEnvCfg(DirectRLEnvCfg):
     """
-    Defines how the Cartpole training environment is built and simulated.
-    Used to tell Isaac Lab what to include in the world (robot, scene, physics).
+    Defines the configuration for the Cartpole training environment.
+    Specifies how the simulation behaves, which robot to use,
+    and how the world is replicated for large-scale reinforcement learning.
     """
 
-    # --- Simulation Configuration ---
+    # --- General / placeholder section ---
+    # Other configuration fields can be defined here (reward, sensors, etc.)
+    .
+    .
+    .
+
+
+    # --- Simulation configuration ---
     sim: SimulationCfg = SimulationCfg(
-        dt=1 / 120,           # Simulation time step (smaller = more accurate physics)
-        render_interval=2     # Renders every 2nd frame (faster training)
+        dt=1 / 120,              # Physics time step: 1/120 sec per step (smooth simulation)
+        render_interval=2        # Render every 2 simulation steps (improves speed)
     )
     # WHY IMPORTANT:
-    # Controls how the virtual world runs — this is the “physics engine heartbeat.”
-    # In robot training, precise and stable physics are essential for reliable learning.
+    # Defines how time and rendering progress in the simulated world.
+    # A smaller dt = more accurate physics, render_interval controls visualization frequency.
 
 
-    # --- Robot Configuration ---
+    # --- Robot configuration ---
     robot_cfg: ArticulationCfg = CARTPOLE_CFG.replace(
-        prim_path="/World/envs/env_.*/Robot"  # Defines where the robot exists in the stage hierarchy
+        prim_path="/World/envs/env_.*/Robot"  # Location pattern where each robot is placed in the scene
     )
     # WHY IMPORTANT:
-    # Loads the Cartpole robot model so the RL agent has a physical system to control.
-    # This connects the learning algorithm to something it can act on and observe.
+    # Loads the Cartpole robot model and tells Isaac Lab where to spawn it for each environment instance.
+    # Without this, the environment would have no physical robot for the RL agent to control.
 
 
-    # --- Scene Configuration ---
+    # --- Scene configuration ---
     scene: InteractiveSceneCfg = InteractiveSceneCfg(
-        num_envs=4096,        # Number of parallel simulated environments
-        env_spacing=4.0,      # Distance between environment copies to avoid interference
-        replicate_physics=True # All copies share the same physics engine
+        num_envs=4096,           # Creates 4,096 environments in parallel
+        env_spacing=4.0,         # Distance between each environment (to prevent overlap)
+        replicate_physics=True   # All environments share the same physics configuration
     )
     # WHY IMPORTANT:
-    # Enables *vectorized simulation* — thousands of Cartpoles train simultaneously.
-    # This massively speeds up data collection and policy learning, a key benefit of Isaac Lab.
+    # Controls large-scale parallel training, a major strength of Isaac Lab.
+    # This setup allows thousands of Cartpoles to be trained at once for faster learning.
+
+
+    # --- General / placeholder section ---
+    # More configuration parameters (e.g., sensors, goals) can be added here later.
+    .
+    .
+    .
+
 ```
 
-  #### For custom project
+**-> For custom project**
   
   **When following the documentation with a custom project, "isaac_lab_tutorial" should be replaced by your project name, eg. "myProject"**
   
@@ -80,11 +108,20 @@ class IsaacLabTutorialEnvCfg(DirectRLEnvCfg):
   - Check the environment configurations:
     - Open the config file (using Sublime in this example): ```subl myproject_env_cfg.py```
     - If you don't have sublime enabled, run: ```sudo snap install sublime-text --classic```
-  
-  **-> you can also navigate to these folders on Windows Explorer by starting at the path: 
-    - Ubuntu: ```\\wsl.localhost\Ubuntu-22.04\root\IsaacSim\myProject```**
+
 
 ### 1.2- The Environment: isaac_lab_tutorial_env.py
+
+- This file is where the logic of the training environment lives.
+- While the config file (IsaacLabTutorialEnvCfg) defines what the world looks like,
+this file (IsaacLabTutorialEnv) defines how it behaves during reinforcement learning.
+- tells Isaac Lab how to use that simulation (configured by IsaacLabTutorialEnvCfg) for reinforcement learning.
+- What it does:
+  - It builds the scene (ground, lights, robot, clones of the environment).
+  - It manages each training step, like applying robot actions and collecting sensor data.
+  - It calculates rewards (how well the robot performed).
+  - It handles resets when an episode ends or fails.
+
 - In the same path ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial``` open ```isaac_lab_tutorial_env.py```
 
 ```python
@@ -205,11 +242,11 @@ The cfg variable connects those two worlds. It’s how the environment knows wha
 - Defining the environment
 Source: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/technical_env_design.html
 
-### Define the Robot
-- Inside ```~/IsaacSim/myProject/source/myProject/myProject``` Create a folder "robots" ```mkdir robots```
+### 2.0- Define the Robot
+- Inside ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial\isaac_lab_tutorial>``` Create a folder "robots" ```mkdir robots``` if it doesn't yet exist
 - Within this folder create two files: __init__.py and jetbot.py. ```touch __init__.py jetbot.py```
 - __init__.py makes the folder a Python package, and jetbot.py will be your module file.
-- Open jetbot.py ```nano jetbot.py``` copy the following code inside:
+- Open jetbot.py ```jetbot.py``` copy the following code inside:
 ```
 import isaaclab.sim as sim_utils
 from isaaclab.assets import ArticulationCfg
@@ -224,41 +261,95 @@ JETBOT_CONFIG = ArticulationCfg(
 - Save it with Ctrl X, Yes.
 - The only purpose of this file is to define a unique path in which to save our configurations.
 
-### Environment Configuration
-- Navigate to ```~/IsaacSim/myProject/source/myProject/myProject/tasks/direct/myproject```
-- Open myproject_env_cfg.py and replace its content with
+### 2.1- Specifying Environment Configuration: isaac_lab_tutorial_env_cfg
+- Navigate back to ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial```
+- Open again ```isaac_lab_tutorial_env_cfg``` and replace its content with:
+- 
 ```
-from isaac_lab_tutorial.robots.jetbot import JETBOT_CONFIG
+# --- Imports ---
+# Bring in the Jetbot configuration and Isaac Lab modules needed for environment setup
+from isaac_lab_tutorial.robots.jetbot import JETBOT_CONFIG        # Predefined Jetbot model with its actuators
+from isaaclab.assets import ArticulationCfg                       # Used to describe robot structure and joints
+from isaaclab.envs import DirectRLEnvCfg                          # Base config for reinforcement learning environments
+from isaaclab.scene import InteractiveSceneCfg                    # Defines how many environments and how they’re arranged
+from isaaclab.sim import SimulationCfg                             # Defines the physics simulation settings
+from isaaclab.utils import configclass                             # Marks this as a config class usable by Isaac Lab
 
-from isaaclab.assets import ArticulationCfg
-from isaaclab.envs import DirectRLEnvCfg
-from isaaclab.scene import InteractiveSceneCfg
-from isaaclab.sim import SimulationCfg
-from isaaclab.utils import configclass
 
 @configclass
 class IsaacLabTutorialEnvCfg(DirectRLEnvCfg):
-    # env
-    decimation = 2
-    episode_length_s = 5.0
-    # - spaces definition
-    action_space = 2
-    observation_space = 3
-    state_space = 0
-    # simulation
-    sim: SimulationCfg = SimulationCfg(dt=1 / 120, render_interval=decimation)
-    # robot(s)
-    robot_cfg: ArticulationCfg = JETBOT_CONFIG.replace(prim_path="/World/envs/env_.*/Robot")
-    # scene
-    scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=100, env_spacing=4.0, replicate_physics=True)
+    """
+    Defines the configuration for the Jetbot training environment.
+    This tells Isaac Lab what simulation to build, which robot to use,
+    how long each episode lasts, and how many environments to train in parallel.
+    """
+
+    # --- Environment-level settings ---
+    decimation = 2                    # Simulation renders every 2 steps (reduces computation cost)
+    episode_length_s = 5.0            # Each training episode lasts 5 seconds
+    # WHY IMPORTANT:
+    # Controls simulation efficiency and how frequently the agent interacts with the world.
+
+
+    # --- RL space definitions ---
+    action_space = 2                  # Two actions: left and right wheel velocity
+    observation_space = 3             # Three values observed (e.g. dot, cross, forward speed)
+    state_space = 0                   # No internal state tracking needed
+    # WHY IMPORTANT:
+    # Defines how the RL agent sees and interacts with the world.
+    # These must match the neural network input/output dimensions during training.
+
+
+    # --- Simulation configuration ---
+    sim: SimulationCfg = SimulationCfg(
+        dt=1 / 120,                   # Physics timestep (120 updates per second)
+        render_interval=decimation    # Renders every 2 steps for faster training
+    )
+    # WHY IMPORTANT:
+    # Creates the physical simulation environment — defines time stepping and rendering speed.
+
+
+    # --- Robot setup ---
+    robot_cfg: ArticulationCfg = JETBOT_CONFIG.replace(
+        prim_path="/World/envs/env_.*/Robot"   # Places each Jetbot in its environment instance on the stage
+    )
+    # WHY IMPORTANT:
+    # Loads the Jetbot model and tells Isaac Lab where to spawn it in each cloned environment.
+    # The robot configuration defines what the agent will control.
+
+
+    # --- Scene setup ---
+    scene: InteractiveSceneCfg = InteractiveSceneCfg(
+        num_envs=100,                 # Create 100 parallel environments
+        env_spacing=4.0,              # Space each one 4 meters apart
+        replicate_physics=True        # All share the same physics configuration
+    )
+    # WHY IMPORTANT:
+    # Enables large-scale parallel training, speeding up RL data collection.
+
+
+    # --- Robot joint names ---
     dof_names = ["left_wheel_joint", "right_wheel_joint"]
+    # WHY IMPORTANT:
+    # Defines which joints are controlled by the RL agent.
+    # These correspond to the robot’s physical actuators in simulation.
+
 ```
-- **-> replace ```class IsaacLabTutorialEnvCfg(DirectRLEnvCfg):``` with the name of your project, in this case ```class MyprojectEnvCfg(DirectRLEnvCfg):```**
-- **-> replace ```from isaac_lab_tutorial.robots.jetbot import JETBOT_CONFIG``` with the name of your project, in this case: ```from myProject.robots.jetbot import JETBOT_CONFIG```
 - Save and close
 - Here we have, effectively, the same environment configuration as before, but with the Jetbot instead of the cartpole
 
-### Setup Environment Details
+
+**-> for Custom Project**
+  ### Environment Configuration
+  - Navigate to ```~/IsaacSim/myProject/source/myProject/myProject/tasks/direct/myproject```
+  - insert new code as above
+  - **-> replace ```class IsaacLabTutorialEnvCfg(DirectRLEnvCfg):``` with the name of your project, in this case ```class MyprojectEnvCfg(DirectRLEnvCfg):```**
+  - **-> replace ```from isaac_lab_tutorial.robots.jetbot import JETBOT_CONFIG``` with the name of your project, in this case: ```from myProject.robots.jetbot import JETBOT_CONFIG```
+  - Save and close
+
+---------- STOPPED HERE ----------
+
+### 2.2- Setup Environment Details / Attack of the clones
 - Navigate to ```~/IsaacSim/myProject/source/myProject/myProject/tasks/direct/myproject#``` and open myproject_env.py
 -  replace the contents of the __init__ and _setup_scene methods with the following
 ```
