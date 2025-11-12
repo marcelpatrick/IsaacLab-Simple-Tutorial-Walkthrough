@@ -1,36 +1,209 @@
 # IsaacLab-Simple-Tutorial-Walkthrough
 from: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/index.html 
 
-## 0- Pre-Requisites
+### Project Settings
+- This example is running on Anaconda Prompt CLI running on Windows11. 
+
+### Pre-Requisites
 - Before starting, make sure you have completed the prerequisites i.e. creating a virtual environment and a project with IsaacSim and IsaacLab installed as well as all other libraries e.g. Python 3.11 etc.
 - You can find the step by step tutorial for the prerequisites for Windows11 native here: https://github.com/marcelpatrick/IsaacSim-IsaacLab-installation-for-Windows-Easy-Tutorial/blob/main/README.md
   
-## Activate the environment
+### Activate the environment
 - Open Conda CLI: (on a conda cli: click on Windows search option, type “anaconda prompt”, click on it to open the cli)
 - Activate the conda environment created with Python 3.11 ```conda activate env_isaaclab```
-  
-## Classes and Configs
+
+## 1- Understanding the main project files/scripts:
+
+### 1.1- Classes and Configs: myproject_env_cfg.py
 Source: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/api_env_design.html
 
-#### Working with the repo project: "isaac_lab_tutorial"
-
-- Navigate to ```(env_isaaclab) C:\Users\[YOUR INTERNAL PATH]\IsaacLab\source>```
+- Navigate to ```(env_isaaclab) C:\Users\[YOUR INTERNAL PATH]\IsaacLab\source>``` (either on CLI or Windows explorer)
 - Clone repo there ```git clone https://github.com/isaac-sim/IsaacLabTutorial.git isaac_lab_tutorial```
 - Run ```dir``` and check that isaac_lab_tutorial is there
-
-
-#### For custom project
-**When following the documentation, "isaac_lab_tutorial" should be replaced by your project name, in this case "myProject"**
-
-
-- Navigate to ```cd ~/IsaacSim/myProject/source/myProject/myProject/tasks/direct/myproject```
+- Navigate to ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial```
 - Check the environment configurations:
-  - Open the config file (using Sublime in this example): ```subl myproject_env_cfg.py```
-  - If you don't have sublime enabled, run: ```sudo snap install sublime-text --classic```
+  - Open the config file. ```myproject_env_cfg.py```
+  - Here is a description of each component of this file:
+```
+from isaac_lab_tutorial.robots.jetbot import JETBOT_CONFIG
 
-**-> you can also navigate to these folders on Windows Explorer by starting at the path: ```\\wsl.localhost\Ubuntu-22.04\root\IsaacSim\myProject```**
+from isaaclab.assets import ArticulationCfg
+from isaaclab.envs import DirectRLEnvCfg
+from isaaclab.scene import InteractiveSceneCfg
+from isaaclab.sim import SimulationCfg
+from isaaclab.utils import configclass
 
-## 1- Environment Design
+# @configclass is a decorator that marks this class as a “configuration” so Isaac Lab knows how to use it when building or cloning multiple training environments.
+
+@configclass
+class IsaacLabTutorialEnvCfg(DirectRLEnvCfg):
+    """
+    Defines how the Cartpole training environment is built and simulated.
+    Used to tell Isaac Lab what to include in the world (robot, scene, physics).
+    """
+
+    # --- Simulation Configuration ---
+    sim: SimulationCfg = SimulationCfg(
+        dt=1 / 120,           # Simulation time step (smaller = more accurate physics)
+        render_interval=2     # Renders every 2nd frame (faster training)
+    )
+    # WHY IMPORTANT:
+    # Controls how the virtual world runs — this is the “physics engine heartbeat.”
+    # In robot training, precise and stable physics are essential for reliable learning.
+
+
+    # --- Robot Configuration ---
+    robot_cfg: ArticulationCfg = CARTPOLE_CFG.replace(
+        prim_path="/World/envs/env_.*/Robot"  # Defines where the robot exists in the stage hierarchy
+    )
+    # WHY IMPORTANT:
+    # Loads the Cartpole robot model so the RL agent has a physical system to control.
+    # This connects the learning algorithm to something it can act on and observe.
+
+
+    # --- Scene Configuration ---
+    scene: InteractiveSceneCfg = InteractiveSceneCfg(
+        num_envs=4096,        # Number of parallel simulated environments
+        env_spacing=4.0,      # Distance between environment copies to avoid interference
+        replicate_physics=True # All copies share the same physics engine
+    )
+    # WHY IMPORTANT:
+    # Enables *vectorized simulation* — thousands of Cartpoles train simultaneously.
+    # This massively speeds up data collection and policy learning, a key benefit of Isaac Lab.
+```
+
+    #### For custom project
+    
+    **When following the documentation with a custom project, "isaac_lab_tutorial" should be replaced by your project name, eg. "myProject"**
+    
+    - Navigate to ```cd .../myProject/source/myProject/myProject/tasks/direct/myproject```
+    - Check the environment configurations:
+      - Open the config file (using Sublime in this example): ```subl myproject_env_cfg.py```
+      - If you don't have sublime enabled, run: ```sudo snap install sublime-text --classic```
+    
+    **-> you can also navigate to these folders on Windows Explorer by starting at the path: 
+      - Ubuntu: ```\\wsl.localhost\Ubuntu-22.04\root\IsaacSim\myProject```**
+
+### 1.2- The Environment: isaac_lab_tutorial_env.py
+- In the same path ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial``` open ```isaac_lab_tutorial_env.py```
+
+```
+# --- Imports ---
+# Bring in the environment configuration we defined earlier (with sim, robot, and scene setup)
+from .isaac_lab_tutorial_env_cfg import IsaacLabTutorialEnvCfg
+
+
+# --- Environment Definition ---
+class IsaacLabTutorialEnv(DirectRLEnv):
+    # Links this environment to its configuration class
+    cfg: IsaacLabTutorialEnvCfg
+
+    def __init__(self, cfg: IsaacLabTutorialEnvCfg, render_mode: str | None = None, **kwargs):
+        # Initialize the parent DirectRLEnv (sets up sim, scene, etc.)
+        super().__init__(cfg, render_mode, **kwargs)
+        # WHY IMPORTANT:
+        # The DirectRLEnv base class provides the interface Isaac Lab and RL libraries expect.
+        # Passing cfg ensures the environment uses the exact sim, robot, and scene we defined earlier.
+        # This ties configuration and runtime behavior together cleanly.
+
+
+    def _setup_scene(self):
+        # Create the robot using its configuration (loads model into the scene)
+        self.robot = Articulation(self.cfg.robot_cfg)
+
+        # Add a flat ground plane under the robot
+        spawn_ground_plane(prim_path="/World/ground", cfg=GroundPlaneCfg())
+
+        # Register the robot in the scene so Isaac Lab tracks it
+        self.scene.articulations["robot"] = self.robot
+
+        # Clone and replicate the base environment to create all parallel copies
+        self.scene.clone_environments(copy_from_source=False)
+
+        # Add lighting so the scene is visible (useful for visualization)
+        light_cfg = sim_utils.DomeLightCfg(intensity=2000.0, color=(0.75, 0.75, 0.75))
+        light_cfg.func("/World/Light", light_cfg)
+
+        # WHY IMPORTANT:
+        # This builds the actual 3D world described in the config:
+        # - loads the robot
+        # - sets up physics entities (ground)
+        # - duplicates the environment for parallel training
+        # This is the foundation for scalable robot learning.
+
+
+    def _pre_physics_step(self, actions: torch.Tensor) -> None:
+        # Called before each physics step — prepares and validates actions
+        # WHY IMPORTANT:
+        # Separates action handling from simulation to keep updates consistent
+        # and avoid conflicts during physics calculations.
+
+
+    def _apply_action(self) -> None:
+        # Actually applies the agent’s actions to the robot’s joints or motors
+        # WHY IMPORTANT:
+        # Translates the RL agent’s outputs into physical motion commands.
+        # This is where the robot interacts with the simulated world.
+
+
+    def _get_observations(self) -> dict:
+        # Gathers sensory data or state info from the robot (e.g. position, velocity)
+        # WHY IMPORTANT:
+        # Provides feedback for the RL policy — the “eyes and ears” of the agent.
+
+
+    def _get_rewards(self) -> torch.Tensor:
+        # Calculates the reward signal based on task performance
+        total_reward = compute_rewards(...)
+        return total_reward
+        # WHY IMPORTANT:
+        # Defines the learning objective — tells the agent what behaviors are desirable.
+
+
+    def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
+        # Checks if an episode is finished (success, failure, or time limit)
+        # WHY IMPORTANT:
+        # Ensures the simulation resets environments correctly and avoids infinite runs.
+
+
+    def _reset_idx(self, env_ids: Sequence[int] | None):
+        # Resets the specified environments (e.g. after failure or episode end)
+        # WHY IMPORTANT:
+        # Refreshes robot and environment states for the next training episode.
+        # Keeps training stable and continuous across thousands of environments.
+
+
+# --- Reward Function ---
+@torch.jit.script
+def compute_rewards(...):
+    # Computes total reward based on robot behavior and environment state
+    return total_reward
+    # WHY IMPORTANT:
+    # Encapsulates reward logic in a compiled (JIT) function for speed and clarity.
+    # Critical for defining what “success” means in robot learning.
+```
+
+```cfg: IsaacLabTutorialEnvCfg```
+cfg is just an annotation that says “cfg is expected to be an instance of the class IsaacLabTutorialEnvCfg.” It throws warnings If you’re using a type checker like mypy, Pyright, or an IDE (VSCode, PyCharm)
+
+To wrap up:
+1. The config class (IsaacLabTutorialEnvCfg) defines what exists
+– simulation settings
+– robot model
+– scene layout
+
+2. The environment class (IsaacLabTutorialEnv) defines how it behaves
+– how to apply actions
+– how to calculate rewards
+– how to reset the world
+
+The cfg variable connects those two worlds. It’s how the environment knows what world to build. It tells the new environment: 
+- what robot to spawn,
+- what physics settings to use,
+- or how many parallel copies to make.
+
+
+## 2- Environment Design
 - Defining the environment
 Source: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/technical_env_design.html
 
