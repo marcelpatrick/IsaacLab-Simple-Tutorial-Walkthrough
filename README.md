@@ -24,7 +24,7 @@ Source: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/api_e
 - Check the environment configurations:
   - Open the config file. ```myproject_env_cfg.py```
   - Here is a description of each component of this file:
-```
+```python
 from isaac_lab_tutorial.robots.jetbot import JETBOT_CONFIG
 
 from isaaclab.assets import ArticulationCfg
