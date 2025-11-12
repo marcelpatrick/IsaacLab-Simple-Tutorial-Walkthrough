@@ -72,17 +72,17 @@ class IsaacLabTutorialEnvCfg(DirectRLEnvCfg):
     # This massively speeds up data collection and policy learning, a key benefit of Isaac Lab.
 ```
 
-    #### For custom project
-    
-    **When following the documentation with a custom project, "isaac_lab_tutorial" should be replaced by your project name, eg. "myProject"**
-    
-    - Navigate to ```cd .../myProject/source/myProject/myProject/tasks/direct/myproject```
-    - Check the environment configurations:
-      - Open the config file (using Sublime in this example): ```subl myproject_env_cfg.py```
-      - If you don't have sublime enabled, run: ```sudo snap install sublime-text --classic```
-    
-    **-> you can also navigate to these folders on Windows Explorer by starting at the path: 
-      - Ubuntu: ```\\wsl.localhost\Ubuntu-22.04\root\IsaacSim\myProject```**
+  #### For custom project
+  
+  **When following the documentation with a custom project, "isaac_lab_tutorial" should be replaced by your project name, eg. "myProject"**
+  
+  - Navigate to ```cd .../myProject/source/myProject/myProject/tasks/direct/myproject```
+  - Check the environment configurations:
+    - Open the config file (using Sublime in this example): ```subl myproject_env_cfg.py```
+    - If you don't have sublime enabled, run: ```sudo snap install sublime-text --classic```
+  
+  **-> you can also navigate to these folders on Windows Explorer by starting at the path: 
+    - Ubuntu: ```\\wsl.localhost\Ubuntu-22.04\root\IsaacSim\myProject```**
 
 ### 1.2- The Environment: isaac_lab_tutorial_env.py
 - In the same path ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial``` open ```isaac_lab_tutorial_env.py```
