@@ -265,7 +265,7 @@ JETBOT_CONFIG = ArticulationCfg(
 - Navigate back to ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial```
 - Open again ```isaac_lab_tutorial_env_cfg``` and replace its content with:
 - 
-```
+```python
 # --- Imports ---
 # Bring in the Jetbot configuration and Isaac Lab modules needed for environment setup
 from isaac_lab_tutorial.robots.jetbot import JETBOT_CONFIG        # Predefined Jetbot model with its actuators
@@ -352,7 +352,7 @@ class IsaacLabTutorialEnvCfg(DirectRLEnvCfg):
 ### 2.2- Setup Environment Details / Attack of the clones
 - Navigate to ```~/IsaacSim/myProject/source/myProject/myProject/tasks/direct/myproject#``` and open myproject_env.py
 -  replace the contents of the __init__ and _setup_scene methods with the following
-```
+```python
 class MyprojectEnv(DirectRLEnv):
     cfg: MyprojectEnvCfg
 
@@ -376,7 +376,7 @@ class MyprojectEnv(DirectRLEnv):
 - Notice that the _setup_scene method doesn’t change and the _init__ method is simply grabbing the joint indices from the robot (remember, setup is called in super).
 
 - The next thing our environment needs is the definitions for how to handle actions, observations, and rewards. First, replace the contents of _pre_physics_step and _apply_action with the following.
-```
+```python
 def _pre_physics_step(self, actions: torch.Tensor) -> None:
     self.actions = actions.clone()
 
@@ -387,7 +387,7 @@ def _apply_action(self) -> None:
 - The _apply_action method is where those actions are actually applied to the robots on the stage
 
 - Replace the contents of _get_observations and _get_rewards with the following
-```
+```python
 def _get_observations(self) -> dict:
     self.velocity = self.robot.data.root_com_lin_vel_b
     observations = {"policy": self.velocity}
@@ -408,7 +408,7 @@ def _get_rewards(self) -> torch.Tensor:
   - As a place holder, we will make the reward the magnitude of the linear velocity of the Jetbot in the body frame. With this reward and observation space, the agent should learn to drive the Jetbot forward or backward, with the direction determined at random shortly after training starts.
 
 - Replace the contents of _get_dones and _reset_idx with the following.
-```
+```python
 def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
     time_out = self.episode_length_buf >= self.max_episode_length - 1
 
@@ -446,13 +446,13 @@ def _reset_idx(self, env_ids: Sequence[int] | None):
   - Add the following to the global scope of isaac_lab_tutorial_env.py:
     
   - include import libraries in the beginning
-```
+```python
 from isaaclab.markers import VisualizationMarkers, VisualizationMarkersCfg
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
 import isaaclab.utils.math as math_utils
 ```
 - include a new function **outside and before** the MyprojectEnv class:
-```
+```python
 def define_markers() -> VisualizationMarkers:
     """Define markers with various different shapes."""
     marker_cfg = VisualizationMarkersCfg(
@@ -474,7 +474,7 @@ def define_markers() -> VisualizationMarkers:
 ```
 
 - Setup data for tracking the commands as well as the marker positions and rotations. Replace the contents of _setup_scene with the following
-```
+```python
 def _setup_scene(self):
     self.robot = Articulation(self.cfg.robot_cfg)
     # add ground plane
@@ -512,7 +512,7 @@ def _setup_scene(self):
     self.command_marker_orientations = torch.zeros((self.cfg.scene.num_envs, 4)).cuda()
 ```
   - Define the visualize markers function **inside** the ```class MyprojectEnv(DirectRLEnv)``` and after def _setup_scene
-```
+```python
  def _visualize_markers(self):
     # get marker locations and orientations
     self.marker_locations = self.robot.data.root_pos_w
@@ -532,7 +532,7 @@ def _setup_scene(self):
 
 - call _visualize_markers on the pre physics step
 - paste ```self._visualize_markers()``` inside
-```
+```python
 def _pre_physics_step(self, actions: torch.Tensor) -> None:
   self.actions = actions.clone()
   self._visualize_markers()
@@ -540,7 +540,7 @@ def _pre_physics_step(self, actions: torch.Tensor) -> None:
 
 - update the _reset_idx method to account for the commands and markers
 - Replace the contents of _reset_idx with the following:
-```
+```python
 def _reset_idx(self, env_ids: Sequence[int] | None):
     if env_ids is None:
         env_ids = self.robot._ALL_INDICES
