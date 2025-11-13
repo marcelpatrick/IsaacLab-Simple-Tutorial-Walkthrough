@@ -19,6 +19,34 @@ from: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/index.h
 
 ## 1- Understanding the main project files/scripts:
 
+### 1.0- File Architecture: 
+
+a) **CONFIG** file (IsaacLabTutorialEnvCfg): What is in the world
+- Defines what the simulation contains, the world and how it works: robot, physics, scene size, action/obs spaces.
+- Defines what gets rendered in the simulation
+- Allows to swap robots by just swapping this file.
+- Allows to change environment conditions easily from this file: eg. reducing timesteps (for faster prototyping); apply stronger gravity to test with accurate conditions (full scale staging testing).
+- Allows you to run simulations with different robots in different environments, but keeping the same RL logic among them.
+
+b) **ENVIRONMENT** file (IsaacLabTutorialEnv): What to learn
+- Defines how the simulation runs: spawn robot, apply actions, compute rewards, reset.
+- Defines the tasks the agents should accomplish and what is considered success (reward)
+- Rewards are defined by what tasks the agent should accomplish - and this is defined by the env. Eg:
+  - “balance the pole”
+  - “move forward”
+  - “stay upright”
+  - “avoid collisions”
+- Define the Episodes: one full attempt at the task.
+  - Episode ends when robot accomplishes the goal (eg: arm grabs a defined object, robot reaches a location)
+  - Episode ends when robot fails or violates a condition (eg: coliding with forbiden objects. too much deviation from a path)
+  - Episode ends after X mins
+  - Constrains: eg: accumulates too much torque (eg: trying to lift a box that is too heavy for him, keeps adding more torque and the arm doesn't move)
+
+c) Training Hyperparameters: How to learn it
+- if running SKRL: leave in a trainign script under ```scripts/skrl/train.py```
+- if running RSL-RL: live in a YAML file usually ```rsl_rl_cfg/ppo.yaml```
+
+
 ### 1.1- Classes and Configs: Environment Configuration: isaac_lab_tutorial_env_cfg.py
 Source: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/api_env_design.html
 
@@ -350,6 +378,50 @@ class IsaacLabTutorialEnvCfg(DirectRLEnvCfg):
 ---------- STOPPED HERE ----------
 
 ### 2.2- Setup Environment Details / Attack of the clones
+- Navigate to ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial``` and open ```isaac_lab_tutorial_env.py```
+- replace the contents of the __init__ and _setup_scene methods with the following.
+```python
+class IsaacLabTutorialEnv(DirectRLEnv):
+    cfg: IsaacLabTutorialEnvCfg
+
+    def __init__(self, cfg: IsaacLabTutorialEnvCfg, render_mode: str | None = None, **kwargs):
+        super().__init__(cfg, render_mode, **kwargs)
+
+        self.dof_idx, _ = self.robot.find_joints(self.cfg.dof_names)
+
+    def _setup_scene(self):
+        self.robot = Articulation(self.cfg.robot_cfg)
+        # add ground plane
+        spawn_ground_plane(prim_path="/World/ground", cfg=GroundPlaneCfg())
+        # clone and replicate
+        self.scene.clone_environments(copy_from_source=False)
+        # add articulation to scene
+        self.scene.articulations["robot"] = self.robot
+        # add lights
+        light_cfg = sim_utils.DomeLightCfg(intensity=2000.0, color=(0.75, 0.75, 0.75))
+        light_cfg.func("/World/Light", light_cfg)
+```
+- This part of the file defines the runtime logic for the robot training environment in Isaac Lab.
+It extends DirectRLEnv, which is Isaac Lab’s base class for reinforcement learning environments.
+
+- The configuration file (IsaacLabTutorialEnvCfg) defines what to simulate (robot type, physics, number of environments, etc.). This file (isaacLabTutorialEnv) defines how the simulation is built and initialized at runtime.
+
+- Explaining each major component in this code:
+| Part                                  | Purpose                                                | Why it’s important                                                        |
+| ------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------- |
+| **Class inheritance (`DirectRLEnv`)** | Provides RL-compatible lifecycle (step, reset, reward) | Integrates with Isaac Lab’s RL pipeline                                   |
+| **`cfg` field**                       | Brings in simulation setup defined elsewhere           | Connects the environment logic with the configuration                     |
+| **`self.dof_idx`**                    | Finds robot joints to control                          | Allows the RL agent to send motor commands to specific parts of the robot |
+| **`_setup_scene()`**                  | Builds the virtual world and clones it                 | Creates the actual 3D simulation where learning happens                   |
+| **Ground plane and lighting**         | Add realism and stability to the scene                 | Needed for physics accuracy and visualization                             |
+
+- Joint (DoF) indexing means finding which specific joints of the robot you want to control based on their names (e.g., "left_wheel_joint", "right_wheel_joint").
+Isaac Lab internally numbers all joints, so you must map your joint names → their numeric indices.
+
+It’s relevant because the RL agent sends actions to joints by index, not by name.
+Without this mapping, the environment wouldn’t know which motors the actions should affect — the robot wouldn’t move, or the wrong joints would be controlled.
+
+**-> For Custom Project**
 - Navigate to ```~/IsaacSim/myProject/source/myProject/myProject/tasks/direct/myproject#``` and open myproject_env.py
 -  replace the contents of the __init__ and _setup_scene methods with the following
 ```python
