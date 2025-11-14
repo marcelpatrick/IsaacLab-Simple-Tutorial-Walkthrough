@@ -255,7 +255,7 @@ def compute_rewards(...):
 – robot model
 – scene layout
 
-2. The environment class (IsaacLabTutorialEnv) defines how it behaves
+2. The environment class (IsaacLabTutorialEnv) defines how the robot behaves in it and what it does
 – how to apply actions
 – how to calculate rewards
 – how to reset the world
