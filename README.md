@@ -5,8 +5,12 @@ from: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/index.h
 - **Simulation**: one environment. Is the physics engine running the virtual world frame-by-frame
   - **Scene**: the level blueprint, the stage, a description or template for rendering the simulation world.
     - **Environment**: one fully independent copy of the simulation where a robot lives, acts, receives rewards, and runs episodes. Scene + RL logic
-       - **Episode**: Each attempt the robot makes at completing the task and getting the reward. Starts when the robot is reset. Ends when it fails, succeeds, or times out. Happens thousands of times inside each environment. 
-
+       - **Episode**: Each attempt the robot makes at completing the task and getting the reward. Starts when the robot is reset. Ends when it fails, succeeds, or times out. Happens thousands of times inside each environment.
+         - **Policy:** Action generator. Defines how the robot moves given an input: “Given what I see (observations), what should I do (actions)". Like the robot's reflex. It does not define what success is or whether this action was performed as expected by the reward function.
+          - **RL Algorithm:** In this project, we are adjusting the policy through RL (uses neural networks with a reward function). The RL algorithm improves/updates the policy/model through reinforcements and punishments defined by its reward function, so that next time the robot gets an input, it implements the policy in a better way and moves closer to the desired direction. The RL algorithm thinks about long-term goals and strategy. 
+             - **Reward Function:** Goal definition. Defines whether the action implemented by the policy went in the desired direction.
+           
+          
 ## Project Settings
 - This example is running on Anaconda Prompt CLI running on Windows 11. 
 
@@ -530,6 +534,7 @@ def _reset_idx(self, env_ids: Sequence[int] | None):
 
 
 ## 3- Training the Jetbot: Ground Truth
+- specify the desired direction for the Jetbot to drive, and have the wheels turn such that the robot drives in that specified direction as fast as possible. How do we achieve this with Reinforcement Learning (RL)?
 - Modify rewards in order to train a policy to act as a controller for the Jetbot.
 - As a user, we would like to use Reinforcement Learning be able to specify the desired direction for the Jetbot to drive, and have the wheels turn such that the robot drives in that specified direction as fast as possible
 
