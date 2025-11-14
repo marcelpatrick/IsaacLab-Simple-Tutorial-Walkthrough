@@ -1,8 +1,16 @@
 # IsaacLab-Simple-Tutorial-Walkthrough
 from: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/index.html 
 
-### Project Settings
-- This example is running on Anaconda Prompt CLI running on Windows11. 
+## Glossary:
+- Simulation: one environment. Is the physics engine running the virtual world frame-by-frame
+  - Scene: the level blueprint, the stage, a description or template for rendering the simulation world.
+    - Environment: one fully independent copy of the simulation where a robot lives, acts, receives rewards, and runs episodes. Scene + RL logic
+      - Episode: Each attempt the robot makes at completing the task and getting the reward. Starts when the robot is reset. Ends when it fails, succeeds, or times out. Happens thousands of times inside each environment. 
+
+- Epoch:
+
+## Project Settings
+- This example is running on Anaconda Prompt CLI running on Windows 11. 
 
 ### Pre-Requisites
 - Before starting, make sure you have completed the prerequisites i.e. creating a virtual environment and a project with IsaacSim and IsaacLab installed as well as all other libraries e.g. Python 3.11 etc.
@@ -122,10 +130,6 @@ class IsaacLabTutorialEnvCfg(DirectRLEnvCfg):
 
     # --- General / placeholder section ---
     # More configuration parameters (e.g., sensors, goals) can be added here later.
-    .
-    .
-    .
-
 ```
 
 **-> For custom project**
@@ -266,7 +270,7 @@ The cfg variable connects those two worlds. It’s how the environment knows wha
 - or how many parallel copies to make.
 
 
-## 2- Environment Design
+## 2- Actions, Scene and Rewards: Environment Design
 - Defining the environment
 Source: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/technical_env_design.html
 
@@ -375,10 +379,10 @@ class IsaacLabTutorialEnvCfg(DirectRLEnvCfg):
   - **-> replace ```from isaac_lab_tutorial.robots.jetbot import JETBOT_CONFIG``` with the name of your project, in this case: ```from myProject.robots.jetbot import JETBOT_CONFIG```
   - Save and close
 
----------- STOPPED HERE ----------
-
 ### 2.2- Setup Environment Details / Attack of the clones
 - Navigate to ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial``` and open ```isaac_lab_tutorial_env.py```
+
+#### 2.2.1- Setup the Scene
 - replace the contents of the __init__ and _setup_scene methods with the following.
 ```python
 class IsaacLabTutorialEnv(DirectRLEnv):
@@ -411,7 +415,7 @@ class IsaacLabTutorialEnv(DirectRLEnv):
 ```
 - Builds the **runtime** RL environment (active, live simulation - like a running game level) using the config file as a blueprint.
 - Defines what happens whey you run the code (runtime): robot actions etc.
-- **Runtime** here is like whey you assign funtions to run OnBeginPlay() on game dev in Unreal Engine for eg. Defines what happens when you press "Play" in the game engine. eg:
+- **Runtime** here is like whey you assign functions to run OnBeginPlay() on game dev in Unreal Engine for eg. Defines what happens when you press "Play" in the game engine. eg:
   - spawns actors, Spawns the robot, adds ground,
   - and sets lighting so the simulation world exists and is usable.
   - runs physics
@@ -421,32 +425,32 @@ class IsaacLabTutorialEnv(DirectRLEnv):
 - Maps robot joint names to internal IDs so actions can be applied to the correct wheels/motors.
 - Overall goal: create an interactive world where the robot will act, observe, and learn via reinforcement learning.
 
-**-> For Custom Project**
-- Navigate to ```~/IsaacSim/myProject/source/myProject/myProject/tasks/direct/myproject#``` and open myproject_env.py
--  replace the contents of the __init__ and _setup_scene methods with the following
-```python
-class MyprojectEnv(DirectRLEnv):
-    cfg: MyprojectEnvCfg
+  **-> For Custom Project**
+  - Navigate to ```~/IsaacSim/myProject/source/myProject/myProject/tasks/direct/myproject#``` and open myproject_env.py
+  -  replace the contents of the __init__ and _setup_scene methods with the following
+  ```python
+  class MyprojectEnv(DirectRLEnv):
+      cfg: MyprojectEnvCfg
+  
+      def __init__(self, cfg: MyprojectEnvCfg, render_mode: str | None = None, **kwargs):
+          super().__init__(cfg, render_mode, **kwargs)
+  
+          self.dof_idx, _ = self.robot.find_joints(self.cfg.dof_names)
+  
+      def _setup_scene(self):
+          self.robot = Articulation(self.cfg.robot_cfg)
+          # add ground plane
+          spawn_ground_plane(prim_path="/World/ground", cfg=GroundPlaneCfg())
+          # clone and replicate
+          self.scene.clone_environments(copy_from_source=False)
+          # add articulation to scene
+          self.scene.articulations["robot"] = self.robot
+          # add lights
+          light_cfg = sim_utils.DomeLightCfg(intensity=2000.0, color=(0.75, 0.75, 0.75))
+          light_cfg.func("/World/Light", light_cfg)
+  ```
 
-    def __init__(self, cfg: MyprojectEnvCfg, render_mode: str | None = None, **kwargs):
-        super().__init__(cfg, render_mode, **kwargs)
-
-        self.dof_idx, _ = self.robot.find_joints(self.cfg.dof_names)
-
-    def _setup_scene(self):
-        self.robot = Articulation(self.cfg.robot_cfg)
-        # add ground plane
-        spawn_ground_plane(prim_path="/World/ground", cfg=GroundPlaneCfg())
-        # clone and replicate
-        self.scene.clone_environments(copy_from_source=False)
-        # add articulation to scene
-        self.scene.articulations["robot"] = self.robot
-        # add lights
-        light_cfg = sim_utils.DomeLightCfg(intensity=2000.0, color=(0.75, 0.75, 0.75))
-        light_cfg.func("/World/Light", light_cfg)
-```
-- Notice that the _setup_scene method doesn’t change and the _init__ method is simply grabbing the joint indices from the robot (remember, setup is called in super).
-
+#### 2.2.2: Setting and running the robot actions
 - The next thing our environment needs is the definitions for how to handle actions, observations, and rewards. First, replace the contents of _pre_physics_step and _apply_action with the following.
 ```python
 def _pre_physics_step(self, actions: torch.Tensor) -> None:
@@ -455,30 +459,49 @@ def _pre_physics_step(self, actions: torch.Tensor) -> None:
 def _apply_action(self) -> None:
     self.robot.set_joint_velocity_target(self.actions, joint_ids=self.dof_idx)
 ```
-- _pre_physics_step: getting data from the policy being trained and applying updates to the physics simulation ( lets us detach the process of getting data from the policy being trained and applying updates to the physics simulation)
-- The _apply_action method is where those actions are actually applied to the robots on the stage
+- _pre_physics_step: 
+  - This function takes the actions coming from the RL policy (the model being trained). It prepares and processes those actions before the physics engine updates the world
+- The _apply_action: 
+  - is where those actions are actually applied to the robots on the stage
+- The code here cleanly separates two things:
+  - Getting the action from the policy
+  - Applying that action to the simulator
+  This separation keeps the logic organized and avoids mixing policy computation with physics updates, which can break the simulation loop or cause incorrect behavior.
 
+#### 2.2.3: Get data to calculate rewards
 - Replace the contents of _get_observations and _get_rewards with the following
 ```python
 def _get_observations(self) -> dict:
     self.velocity = self.robot.data.root_com_lin_vel_b
+    # get robot's linear velocity in its own body frame
+
     observations = {"policy": self.velocity}
+    # package velocity as input to the RL policy
+
     return observations
+    # return what the agent will "see" this step
+
 
 def _get_rewards(self) -> torch.Tensor:
     total_reward = torch.linalg.norm(self.velocity, dim=-1, keepdim=True)
+    # reward = speed magnitude; faster movement = higher reward
+
     return total_reward
+    # send reward to RL algorithm for learning
 ```
+- This code defines what the robot observes and how it gets rewarded during training.
+- The observation is the Jetbot’s linear velocity (How fast the Jetbot is moving in a straight line (not rotating).), meaning how fast it’s moving in its own forward/backward direction.
+- The **reward** is simply the size of that velocity (speed). The faster it goes, the higher the reward.
+- This teaches the robot “move forward as fast as possible.” The only thing used to calculate rewards is the Jetbot’s forward/backward speed measured relative to itself (its body frame), not the world (linear velocity).
+- This code takes the robot’s linear speed and feeds it as input into the RL learning loop as:
+  - ```def _get_observations(self)``` → what the agent “sees”
+    - We are applying actions to all robots on the stage at once
+  - ```_get_rewards(self)``` → what the agent tries to maximize
+     - For each clone of the scene, we need to compute a reward value and return it as a tensor of shape
+- With this reward and observation data, the agent should learn to drive the Jetbot forward or backward, with the direction determined at random shortly after training starts.
 
-- ```def _get_observations(self) -> dict:```
-  - We are applying actions to all robots on the stage at once! Here, when we need to get the observations, we need the body frame velocity for all robots on the stage, and so access ```self.robot.data``` to get that information.
-  - root_com_lin_vel_b is a property of the ArticulationData that handles the conversion of the center-of-mass linear velocity from the world frame to the body frame.
-  - it returns a dictionary composed of a policy: velocity value pair
- 
-- ```def _get_rewards(self) -> torch.Tensor:```
-  - For each clone of the scene, we need to compute a reward value and return it as a tensor of shape [num_envs, 1]
-  - As a place holder, we will make the reward the magnitude of the linear velocity of the Jetbot in the body frame. With this reward and observation space, the agent should learn to drive the Jetbot forward or backward, with the direction determined at random shortly after training starts.
 
+#### 2.2.4: Set termination and resetting
 - Replace the contents of _get_dones and _reset_idx with the following.
 ```python
 def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
@@ -498,13 +521,17 @@ def _reset_idx(self, env_ids: Sequence[int] | None):
 ```
 
 -```def _get_dones(self)```
-  - mark which environments need to be reset and why
-  -  an “episode” ends in one of two ways: either the agent reaches a terminal state, or the episode reaches a maximum duration
+  - Mark which environments need to be reset and why. An environment is one fully independent copy of the simulation where a robot lives, acts, receives rewards, and runs an episode
+  - An “episode” ends in one of two ways: either the agent reaches a terminal state, or the episode reaches a maximum duration
     
 -```def _reset_idx(self, env_ids: Sequence[int] | None):```
-  -   indicating which scenes need to be reset, and resets them
+  -   indicating which scenes need to be reset, and resetting them
 
-## 2- Training the Jetbot: Ground Truth
+
+----------------------------- STOPPED HERE ------------------------------------
+
+
+## 3- Training the Jetbot: Ground Truth
 - Modify rewards in order to train a policy to act as a controller for the Jetbot.
 - As a user, we would like to use Reinforcement Learning be able to specify the desired direction for the Jetbot to drive, and have the wheels turn such that the robot drives in that specified direction as fast as possible
 
