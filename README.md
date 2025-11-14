@@ -533,28 +533,24 @@ def _reset_idx(self, env_ids: Sequence[int] | None):
 ----------------------------- STOPPED HERE ------------------------------------
 
 
-## 3- Training the Jetbot: Ground Truth
-- specify the desired direction for the Jetbot to drive, and have the wheels turn such that the robot drives in that specified direction as fast as possible. How do we achieve this with Reinforcement Learning (RL)?
-- Modify rewards in order to train a policy to act as a controller for the Jetbot.
-- As a user, we would like to use Reinforcement Learning be able to specify the desired direction for the Jetbot to drive, and have the wheels turn such that the robot drives in that specified direction as fast as possible
+## 3- Training the Jetbot: Ground Truth ```isaac_lab_tutorial_env.py```
+- Use the RL algorithm to train the robot's policy according to the reward function: As a user, we would like to be able to specify the desired direction for the Jetbot to drive, and have the wheels turn such that the robot drives in that specified direction as fast as possible.
 
 ### Expanding the environment
 - Create the logic for setting commands for each Jetbot on the stage
 - Each command will be a unit vector, and we need one for every clone of the robot on the stage, which means a tensor of shape [num_envs, 3] (3D vectors)
 
 #### Visualization Markers
-  - Set up ```VisualizationMarkers``` to visualize the training in action. like Debug visuals
+  - Set up ```VisualizationMarkers``` (arrows indicating robot direction) to visualize the training in action. like Debug visuals
   - define the marker config and then instantiate the markers with that config
-  - Add the following to the global scope of isaac_lab_tutorial_env.py:
-    
-  - include import libraries in the beginning
+  - Add the following to the global scope of ```isaac_lab_tutorial_env.py```:
+
+- include a new function **outside and before** the ```IsaacLabTutorialEnv(DirectRLEnv)``` class (or ```class MyprojectEnv(DirectRLEnv)``` if running a custom project):
 ```python
 from isaaclab.markers import VisualizationMarkers, VisualizationMarkersCfg
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
 import isaaclab.utils.math as math_utils
-```
-- include a new function **outside and before** the MyprojectEnv class:
-```python
+
 def define_markers() -> VisualizationMarkers:
     """Define markers with various different shapes."""
     marker_cfg = VisualizationMarkersCfg(
@@ -573,6 +569,13 @@ def define_markers() -> VisualizationMarkers:
         },
     )
     return VisualizationMarkers(cfg=marker_cfg)
+
+class IsaacLabTutorialEnv(DirectRLEnv):
+    cfg: IsaacLabTutorialEnvCfg
+
+    def __init__(self, cfg: IsaacLabTutorialEnvCfg, render_mode: str | None = None, **kwargs):
+        super().__init__(cfg, render_mode, **kwargs)
+        self.dof_idx, _ = self.robot.find_joints(self.cfg.dof_names)
 ```
 
 - Setup data for tracking the commands as well as the marker positions and rotations. Replace the contents of _setup_scene with the following
@@ -613,7 +616,8 @@ def _setup_scene(self):
     self.forward_marker_orientations = torch.zeros((self.cfg.scene.num_envs, 4)).cuda()
     self.command_marker_orientations = torch.zeros((self.cfg.scene.num_envs, 4)).cuda()
 ```
-  - Define the visualize markers function **inside** the ```class MyprojectEnv(DirectRLEnv)``` and after def _setup_scene
+
+  - Define the visualize_markers function **inside** the ```IsaacLabTutorialEnv(DirectRLEnv)``` (or ```class MyprojectEnv(DirectRLEnv)``` if running a custom project) and after ```def _setup_scene```.
 ```python
  def _visualize_markers(self):
     # get marker locations and orientations
@@ -640,8 +644,8 @@ def _pre_physics_step(self, actions: torch.Tensor) -> None:
   self._visualize_markers()
 ```
 
-- update the _reset_idx method to account for the commands and markers
-- Replace the contents of _reset_idx with the following:
+- update the ``_reset_idx`` method to account for the commands and markers
+- Replace the contents of ``_reset_idx`` with the following:
 ```python
 def _reset_idx(self, env_ids: Sequence[int] | None):
     if env_ids is None:
@@ -670,18 +674,27 @@ def _reset_idx(self, env_ids: Sequence[int] | None):
     self._visualize_markers()
 ```
 
-### Exploring the RL problem
+## 4. Exploring the RL problem / Reward and Observation Tuning
 https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/training_jetbot_reward_exploration.html 
 
-- 🎯 The Core Goal: Teaching the AI to *Drive*
+### 4.1- Goal of this section:
+- Goal: train a policy that drives the Jetbot toward any requested direction efficiently.
+- Expands the Jetbot’s observations so it knows where the command direction is and how it is moving.
+- Computes the robot’s forward vector, and uses dot/cross products to express alignment and turn direction simply.
+- Designs different reward functions that teach the robot how to :
+  - move forward
+  - align with the command
+  - move toward the command
+- Fixes “degenerate” behaviors (like driving backward) by reshaping the reward.
 
-- The main point is to set up the problem for our Reinforcement Learning (RL) AI (the agent).
-- The agent is the AI brain, like the robot driver that observes (information about the current state + the goal) and acts based on the observation. It runs its internal logic (policy) and decides what action to take based on the difference (error) between the current state (current linear and angular velocities) and the future state (goal/command).
-- We don't want to just "teleport" the robot to a new spot. We want to teach it *how* to take the correct **actions** (like spinning its wheels) to move from its **current state** (where it is now) to a **desired state** (the goal).
+- The Agent (robot) runs its policy and the RL decides what action to take based on the difference (error/cost) between the current state (current linear and angular velocities) and the future state (goal/command).
+- Although we know on which coordinates we want the robot to end up at (goal), we don't want to just "teleport" the robot to a new spot. We want to teach it **how** to take the correct **actions** (like spinning its wheels) to move from its **current state** (where it is now) to a **desired state** (the goal).
 - The AI learns by trial and error. It needs to see the "error" (the difference between its current state and its goal) to learn which actions reduce that error.
 - With **Reinforcement Learning**, it tells the agent what to do by: if error (difference between initial state and command) increases after action -> negative reinforcement. If error decreases after action -> positive reinforcement. 
 
-#### 0\. The "Current Observation Space": (a 6-dimensional Observation vector)
+### 4.2- How it works?
+
+#### 4.2.1- The "Current Observation Space": (a 6-dimensional Observation vector)
 Before updating this observation vector, the AI only knew how it was currently moving. This was its **"6-dimensional velocity vector"**:
 
 - Linear Velocity X (how fast it's moving forward/backward)
@@ -692,23 +705,23 @@ Before updating this observation vector, the AI only knew how it was currently m
 - Angular Velocity Y (how fast it's spinning around the Y-axis)
 - Angular Velocity Z (how fast it's spinning around the Z-axis)
 
-#### 1\. The "Desired Future State"/Command Vector: The AI's Goal (a 3-dimensional Command vector)
+#### 4.2.2- The "Desired Future State"/Command Vector: The AI's Goal (a 3-dimensional Command vector)
   * **The Command:** Go to a new location, update robots linear velocity (x, y, z)
   * This is just a "goal" or "GPS instruction" we give the AI. In this case, it's a **"unit vector,"** which is simply a 3-number list (e.g., `[1, 0, 0]`) that points in a specific direction with a length of 1 - just one arrow pointing in one direction.
 
-#### 2\. The "Future Observation Space": The AI's Dashboard (a 9-dimensional Observation vector)
-  * This is the *entire set of information* the AI gets to see at every single step: it's current state and the desired state. Think of it as the AI's dashboard. This is the *only* thing it knows about the world.
+#### 4.2.3- The "Future Observation Space": The AI's Dashboard (a 9-dimensional Observation vector)
+  * This is the **entire set of information** the AI gets to see at every single step: its current state and the desired state. Think of it as the AI's dashboard. This is the *only* thing it knows about the world.
   * we need to change the observation space to 9 numbers.
-  * Initial observation vector: linear velocity (3 dimensions) + angular velocity (3 dimension) + command vector (3 dimension) = updated observation vector (9 dimensions)
-  * If we were to update both linear and angular velocity it would result in a new observation vector with 12 dimensions. 
+  * Initial observation vector: linear velocity (3 dimensions) + angular velocity (3 dimension) + command vector to update the linear velocity (3 dimension) = updated observation vector (9 dimensions)
+  * If we were to update both linear and angular velocities, it would result in a new observation vector with 12 dimensions. 
 
-#### 3\. (The "Error" Calculation)
+#### 4.2.4-. (The "Error" Calculation)
 To learn, the AI needs to compare two separate things:
 
 1.  **"Where am I *right now*?" (The Current State)**
 2.  **"Where am I *supposed to* go?" (The Goal State)**
 
-The AI's "brain" (the policy) is like the thermostat's logic: it calculates the "error" between these two and takes an action to fix it.
+The AI's "brain" is like a thermostat: it doesn't know how to set the house to 25 °C. It only receives information (it's 12C, still colder than 25C, keep heating. It's 26C, hotter than 25C, stop heating)
 
   * **The First 6 Numbers (Current State):** or the **"world velocity vector"**. This is the robot's "speedometer." It's a list of 6 values:
 
@@ -724,54 +737,53 @@ By "appending the command to this vector," we are **gluing** these two lists tog
 
 **`Total Observation = [6-number Current State] + [3-number Goal State] = 9-number vector`**
 
-This 9-number "dashboard" gives the AI *everything* it needs to learn. It can now see both its state and its goal, calculate the error, and learn which actions (wheel movements) make its "Current State" numbers look more like its "Goal State" numbers.
+### 4.3- The Code, 
 
------
+#### 4.3.1- Get Observations: ```def _get_observations(self)```
 
-#### 4\. The Code, 
+Navigate to ```C:\Users\myali\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial``` and open ``isaac_lab_tutorial_env`` 
+- (or ```/IsaacSim/myProject/source/myProject/myProject/tasks/direct/myproject#``` and open ```myproject_env.py``` for custom project)
 
-Navigate to ~/IsaacSim/myProject/source/myProject/myProject/tasks/direct/myproject# and open myproject_env.py
-Replace the _get_observations method with the following:
+Replace the ```_get_observations``` method with the following: 
+- already optimized: instead of passing a 9-dimensional vector (linear + angular velocity + command) passes only a 3-dimensional vector (error between current status vs command, whether to turn right/left, current speed - to know if it should speed up or slow down)
+- The dot product calculates the distance between the current linear velocity and the command (error)
 
 ```python
-# This function's job is to gather all the data (observations) 
-# our AI policy needs to make a decision.
 def _get_observations(self) -> dict:
+    # robot linear velocity in world frame
+    self.velocity = self.robot.data.root_com_vel_w
 
-    # 1. GET THE "CURRENT STATE" (Numbers 1-6)
-    #    `root_com_vel_w` stands for "root center-of-mass velocity in the world frame."
-    #    This is our 6-number "speedometer reading" (linear + angular velocity).
-    self.velocity = self.robot.data.root_com_vel_w 
+    # robot forward direction transformed into world frame
+    self.forwards = math_utils.quat_apply(
+        self.robot.data.root_link_quat_w,
+        self.robot.data.FORWARD_VEC_B
+    )
 
-    # 2. A SIDE-QUEST FOR LATER (Calculating the robot's "Forward" direction)
-    #    This line is NOT part of the 9-number observation.
-    #    It's used later to calculate the REWARD.
-    #    `root_link_quat_w`: A "quaternion" is a 4-number value for a 3D rotation. This gets the robot's current rotation.
-    #    `FORWARD_VEC_B`: This is just the vector `[1, 0, 0]` (the robot's "front").
-    #    `math_utils.quat_apply`: This function applies the 3D rotation to the "front" vector.
-    #    In short: This line figures out which way the robot is *actually* pointing in the 3D world.
-    self.forwards = math_utils.quat_apply(self.robot.data.root_link_quat_w, self.robot.data.FORWARD_VEC_B)
+    # dot: how aligned robot is with command (-1 opposite, +1 same direction)
+    dot = torch.sum(self.forwards * self.commands, dim=-1, keepdim=True)
 
-    # 3. BUILD THE "DASHBOARD" (The 9-Number Vector)
-    #    `torch.hstack` means "horizontal stack." It's the "glue."
-    #    It takes our 6-number `self.velocity` vector and our 3-number `self.commands`
-    #    vector and sticks them together, end-to-end, to make one 9-number list.
-    obs = torch.hstack((self.velocity, self.commands)) 
+    # cross: tells if command is left/right of robot's forward direction
+    cross = torch.cross(self.forwards, self.commands, dim=-1)[:, -1].reshape(-1, 1)
 
-    # 4. PACKAGE THE DATA
-    #    The RL framework expects the observations in a "dictionary" (a labeled box).
-    #    We put our 9-number list `obs` into a box labeled "policy"
-    #    so the AI's "brain" knows where to find it.
-    observations = {"policy": obs} 
-    
-    # 5. SEND IT TO THE AI
-    return observations
+    # forward speed in robot’s body frame (positive forward, negative backward)
+    forward_speed = self.robot.data.root_com_lin_vel_b[:,0].reshape(-1,1)
+
+    # stack alignment, turning direction, and forward speed
+    obs = torch.hstack((dot, cross, forward_speed))
+
+    # deliver compact observations to the policy (the RL model)
+    return {"policy": obs}
+
 ```
+- This code builds the Jetbot’s observations, the information its policy uses to choose actions. Instead of giving raw velocities and commands (too large), it compresses direction information into dot (alignment), cross (turn direction), and forward speed. This gives the agent exactly what it needs to follow a commanded direction without extra noise.
 
-### 🎯 The Core Goal: Creating a "Reward"
-This whole section is about designing the reward signal for our AI agent. The reward is like giving the AI a "cookie" (a positive number) when it does something good and a "penalty" (a negative number) when it does something bad.
+#### 4.3.2- Get Rewards: ```def _get_rewards(self)```
 
-The AI's entire goal is to learn how to take actions that get it the most rewards over time.
+- This code defines the **reward function**, which tells the RL algorithm what behavior we want.
+  - It rewards the Jetbot when it moves forward and also toward the commanded direction.
+  - The exponential term suppresses unwanted behavior (like driving backward toward the goal).
+  - The reward forces the robot to first rotate toward the command, then accelerate forward.
+  - This shapes the policy into a controller that reliably follows any direction command.
 
 Objective: just give the AI a reward for two things:
 
@@ -785,11 +797,28 @@ Objective: just give the AI a reward for two things:
      - If two vectors are perfectly aligned (pointing the same way), the inner product is +1.
      - If they are perfectly misaligned (pointing opposite ways), the inner product is -1.
      - If they are at a 90° angle (perpendicular), the inner product is 0.
+    
+```
+def _get_rewards(self) -> torch.Tensor:
+    # reward for forward speed in robot frame
+    forward_reward = self.robot.data.root_com_lin_vel_b[:,0].reshape(-1,1)
+
+    # alignment score between robot forward direction and command vector
+    alignment_reward = torch.sum(self.forwards * self.commands, dim=-1, keepdim=True)
+
+    # exponential maps negative alignment near zero; prevents reverse-driving hacks
+    total_reward = forward_reward * torch.exp(alignment_reward)
+
+    # agent is rewarded only for moving forward AND pointing toward the command
+    return total_reward
+```
 
 The hope is that by rewarding both of these at the same time, the AI will figure out that the best way to drive fast towards the goal.
 
 ## Run
 -> ```python scripts/skrl/train.py --task=Template-Isaac-Lab-Tutorial-Direct-v0```
+
+--- PAREI AQUI ------------
 
 - open an Ubuntu terminal and activate the conda environment, in this case: ```conda activate env_isaaclab"
 - Navigate to ```cd /root/IsaacSim``` and run ```source _build/linux-x86_64/release/setup_conda_env.sh``` to link the IsaacLab project to the IsaacSim build so the terminal can find the IsaacSim module.
