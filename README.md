@@ -21,14 +21,14 @@ from: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/index.h
 
 ### 1.0- File Architecture: 
 
-a) **CONFIG** file (IsaacLabTutorialEnvCfg): What is in the world
+a) **CONFIG** file (IsaacLabTutorialEnvCfg): What is in the world and how it behaves
 - Defines what the simulation contains, the world and how it works: robot, physics, scene size, action/obs spaces.
 - Defines what gets rendered in the simulation
 - Allows to swap robots by just swapping this file.
 - Allows to change environment conditions easily from this file: eg. reducing timesteps (for faster prototyping); apply stronger gravity to test with accurate conditions (full scale staging testing).
 - Allows you to run simulations with different robots in different environments, but keeping the same RL logic among them.
 
-b) **TASKS** file (IsaacLabTutorialEnv): What to learn
+b) **TASKS** file (IsaacLabTutorialEnv): What tasks and actions to perform to learn
 - Defines how the simulation runs: spawn robot, apply actions, compute rewards, reset.
 - Defines the tasks the agents should accomplish and what is considered success (reward)
 - Rewards are defined by what tasks the agent should accomplish - and this is defined by the env. Eg:
@@ -42,7 +42,7 @@ b) **TASKS** file (IsaacLabTutorialEnv): What to learn
   - Episode ends after X mins
   - Constrains: eg: accumulates too much torque (eg: trying to lift a box that is too heavy for him, keeps adding more torque and the arm doesn't move)
 
-c) Training Hyperparameters: How to learn it
+c) **LEARN*** Training Hyperparameters: How to learn it
 - if running SKRL: leave in a trainign script under ```scripts/skrl/train.py```
 - if running RSL-RL: live in a YAML file usually ```rsl_rl_cfg/ppo.yaml```
 
