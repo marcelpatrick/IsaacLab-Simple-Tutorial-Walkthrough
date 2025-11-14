@@ -28,7 +28,7 @@ a) **CONFIG** file (IsaacLabTutorialEnvCfg): What is in the world
 - Allows to change environment conditions easily from this file: eg. reducing timesteps (for faster prototyping); apply stronger gravity to test with accurate conditions (full scale staging testing).
 - Allows you to run simulations with different robots in different environments, but keeping the same RL logic among them.
 
-b) **ENVIRONMENT** file (IsaacLabTutorialEnv): What to learn
+b) **TASKS** file (IsaacLabTutorialEnv): What to learn
 - Defines how the simulation runs: spawn robot, apply actions, compute rewards, reset.
 - Defines the tasks the agents should accomplish and what is considered success (reward)
 - Rewards are defined by what tasks the agent should accomplish - and this is defined by the env. Eg:
