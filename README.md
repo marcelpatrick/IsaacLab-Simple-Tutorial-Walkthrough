@@ -142,7 +142,7 @@ class IsaacLabTutorialEnvCfg(DirectRLEnvCfg):
 
 - This file is where the logic of the training environment lives.
 - While the config file (IsaacLabTutorialEnvCfg) defines what the world looks like,
-this file (IsaacLabTutorialEnv) defines how it behaves during reinforcement learning.
+this file (IsaacLabTutorialEnv) defines what the robot does during reinforcement learning.
 - tells Isaac Lab how to use that simulation (configured by IsaacLabTutorialEnvCfg) for reinforcement learning.
 - What it does:
   - It builds the scene (ground, lights, robot, clones of the environment).
