@@ -7,8 +7,8 @@ from: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/index.h
     - **Environment**: one fully independent copy of the simulation where a robot lives, acts, receives rewards, and runs episodes. Scene + RL logic
        - **Episode**: Each attempt the robot makes at completing the task and getting the reward. Starts when the robot is reset. Ends when it fails, succeeds, or times out. Happens thousands of times inside each environment.
          - **Policy:** Action generator. Defines how the robot moves given an input: “Given what I see (observations), what should I do (actions)". Like the robot's reflex. It does not define what success is or whether this action was performed as expected by the reward function.
-          - **RL Algorithm:** In this project, we are adjusting the policy through RL (uses neural networks with a reward function). The RL algorithm improves/updates the policy/model through reinforcements and punishments defined by its reward function, so that next time the robot gets an input, it implements the policy in a better way and moves closer to the desired direction. The RL algorithm thinks about long-term goals and strategy. 
-             - **Reward Function:** Goal definition. Defines whether the action implemented by the policy went in the desired direction.
+            - **RL Algorithm:** In this project, we are adjusting the policy through RL (uses neural networks with a reward function). The RL algorithm improves/updates the policy/model through reinforcements and punishments defined by its reward function, so that next time the robot gets an input, it implements the policy in a better way and moves closer to the desired direction. The RL algorithm thinks about long-term goals and strategy. 
+               - **Reward Function:** Goal definition. Defines whether the action implemented by the policy went in the desired direction.
            
           
 ## Project Settings
