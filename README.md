@@ -2,12 +2,10 @@
 from: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/index.html 
 
 ## Glossary:
-- Simulation: one environment. Is the physics engine running the virtual world frame-by-frame
-  - Scene: the level blueprint, the stage, a description or template for rendering the simulation world.
-    - Environment: one fully independent copy of the simulation where a robot lives, acts, receives rewards, and runs episodes. Scene + RL logic
-      - Episode: Each attempt the robot makes at completing the task and getting the reward. Starts when the robot is reset. Ends when it fails, succeeds, or times out. Happens thousands of times inside each environment. 
-
-- Epoch:
+- **Simulation**: one environment. Is the physics engine running the virtual world frame-by-frame
+  - **Scene**: the level blueprint, the stage, a description or template for rendering the simulation world.
+    - **Environment**: one fully independent copy of the simulation where a robot lives, acts, receives rewards, and runs episodes. Scene + RL logic
+       - **Episode**: Each attempt the robot makes at completing the task and getting the reward. Starts when the robot is reset. Ends when it fails, succeeds, or times out. Happens thousands of times inside each environment. 
 
 ## Project Settings
 - This example is running on Anaconda Prompt CLI running on Windows 11. 
