@@ -816,12 +816,55 @@ def _get_rewards(self) -> torch.Tensor:
 The hope is that by rewarding both of these at the same time, the AI will figure out that the best way to drive fast towards the goal.
 
 ## Run
--> ```python scripts/skrl/train.py --task=Template-Isaac-Lab-Tutorial-Direct-v0```
 
---- PAREI AQUI ------------
+- Open Anaconda prompt (if not yet done)
+- Activate your env ```conda activate env_isaaclab``` (if not yet done)
+- Go to your project's root folder: ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial>```
+- Run: ```python scripts/skrl/train.py --task=Template-Isaac-Lab-Tutorial-Direct-v0```
 
-- open an Ubuntu terminal and activate the conda environment, in this case: ```conda activate env_isaaclab"
-- Navigate to ```cd /root/IsaacSim``` and run ```source _build/linux-x86_64/release/setup_conda_env.sh``` to link the IsaacLab project to the IsaacSim build so the terminal can find the IsaacSim module.
-- navigate to the projects root folder ```cd /root/IsaacSim/myProject```
-- run the training script.
-  - Replace "Template-Isaac-Lab-Tutorial-Direct-v0" with the name of your project, in this case "MyProject": ```python scripts/skrl/train.py --task=Template-Myproject-Direct-v0```
+It should open IsaacSim, render the environment and robots and start training. It should automatically close the IsaacSim window after training is complete. 
+
+# Issues
+
+## Wrong folder paths
+- If you had installed IsaacSim following the installation [documentation](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/pip_installation.html) (my git guide [here](https://github.com/marcelpatrick/IsaacSim-IsaacLab-installation-for-Windows-Easy-Tutorial/blob/main/README.md) it might have messed up your project file folders path preventing you to run the project. (creating a reduntant nested file structure like ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial...```)
+
+To fix it I had to move files ```pyproject.toml, setup.py``` and folders ```config, isaac_lab_tutorial, scripts``` up 2 levels to ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial```
+
+## Missing libraries: dump_pickle
+
+Also, when I ran train.py I got the error "ImportError: cannot import name 'dump_pickle' from 'isaaclab.utils.io'"
+
+- Had to make these changes to train.py IN ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\scripts\skrl```
+
+```
+# -------- CHANGES to fix error "ImportError: cannot import name 'dump_pickle' from 'isaaclab.utils.io'"
+
+# --------- COMMENTED ORIGINAL CODE
+# from isaaclab.utils.io import dump_pickle, dump_yaml
+
+# -------------------- INSERTED new code block -------------------------
+import pickle
+import yaml
+import os
+
+# Replacement functions for missing Isaac Lab utils
+def dump_pickle(filename, data):
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    with open(filename, "wb") as f:
+        pickle.dump(data, f)
+
+def dump_yaml(filename, data, sort_keys=False):
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    with open(filename, "w") as f:
+        yaml.dump(data, f, sort_keys=sort_keys)
+
+# ---------------- END OF INSERTED CODE --------------------------------
+```
+## Register project with Isaaclab.
+- Activated my env with ```conda activate env_isaaclab```
+- Navigated to "cd C:\Users\[MY USER]\IsaacLab\source\isaac_lab_tutorial"
+- Registered the project in IsaacLab with ```pip install -e .```. It outputs ```Successfully installed isaac_lab_tutorial-0.1.0```
+
+## Train Run
+- Ran ```python scripts/skrl/train.py --task=Template-Isaac-Lab-Tutorial-Direct-v0``` from ```C:\Users\[MY USER]\IsaacLab\source\isaac_lab_tutorial```, the correct **project root**
