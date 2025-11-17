@@ -742,7 +742,7 @@ By "appending the command to this vector," we are **gluing** these two lists tog
 
 #### 4.3.1- Get Observations: ```def _get_observations(self)```
 
-Navigate to ```C:\Users\myali\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial``` and open ``isaac_lab_tutorial_env`` 
+Navigate to ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial``` and open ``isaac_lab_tutorial_env`` 
 - (or ```/IsaacSim/myProject/source/myProject/myProject/tasks/direct/myproject#``` and open ```myproject_env.py``` for custom project)
 
 Replace the ```_get_observations``` method with the following: 
