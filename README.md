@@ -75,7 +75,7 @@ Source: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/api_e
   - how many parallel environments to create for training, and
   - what the robot’s control and observation spaces look like.
   
-- Navigate to ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial```
+- Navigate to ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial```
 - Check the environment configurations:
   - Open the config file. ```isaac_lab_tutorial_env_cfg```
   - Here is a description of each component of this file:
@@ -161,7 +161,7 @@ this file (IsaacLabTutorialEnv) defines what the robot does during reinforcement
   - It calculates rewards (how well the robot performed).
   - It handles resets when an episode ends or fails.
 
-- In the same path ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial``` open ```isaac_lab_tutorial_env.py```
+- In the same path ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial``` open ```isaac_lab_tutorial_env.py```
 
 ```python
 # --- Imports ---
@@ -282,7 +282,7 @@ The cfg variable connects those two worlds. It’s how the environment knows wha
 Source: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/technical_env_design.html
 
 ### 2.0- Define the Robot
-- Inside ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial\isaac_lab_tutorial>``` Create a folder "robots" ```mkdir robots``` if it doesn't yet exist
+- Inside ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\isaac_lab_tutorial>``` Create a folder "robots" ```mkdir robots``` if it doesn't yet exist
 - Within this folder create two files: __init__.py and jetbot.py. ```touch __init__.py jetbot.py```
 - __init__.py makes the folder a Python package, and jetbot.py will be your module file.
 - Open jetbot.py ```jetbot.py``` copy the following code inside:
@@ -301,7 +301,7 @@ JETBOT_CONFIG = ArticulationCfg(
 - The only purpose of this file is to define a unique path in which to save our configurations.
 
 ### 2.1- Specifying Environment Configuration: isaac_lab_tutorial_env_cfg
-- Navigate back to ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial```
+- Navigate back to ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial```
 - Open again ```isaac_lab_tutorial_env_cfg``` and replace its content with:
 - 
 ```python
@@ -387,7 +387,7 @@ class IsaacLabTutorialEnvCfg(DirectRLEnvCfg):
   - Save and close
 
 ### 2.2- Setup Environment Details / Attack of the clones
-- Navigate to ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial``` and open ```isaac_lab_tutorial_env.py```
+- Navigate to ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial``` and open ```isaac_lab_tutorial_env.py```
 
 #### 2.2.1- Setup the Scene
 - replace the contents of the __init__ and _setup_scene methods with the following.
@@ -743,7 +743,7 @@ By "appending the command to this vector," we are **gluing** these two lists tog
 
 #### 4.3.1- Get Observations: ```def _get_observations(self)```
 
-Navigate to ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial``` and open ``isaac_lab_tutorial_env`` 
+Navigate to ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\isaac_lab_tutorial\tasks\direct\isaac_lab_tutorial``` and open ``isaac_lab_tutorial_env`` 
 - (or ```/IsaacSim/myProject/source/myProject/myProject/tasks/direct/myproject#``` and open ```myproject_env.py``` for custom project)
 
 Replace the ```_get_observations``` method with the following: 
@@ -829,7 +829,7 @@ It should open IsaacSim, render the environment and robots and start training. I
 # Issues
 
 ## Wrong folder paths
-- If you had installed IsaacSim following the installation [documentation](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/pip_installation.html) (my git guide [here](https://github.com/marcelpatrick/IsaacSim-IsaacLab-installation-for-Windows-Easy-Tutorial/blob/main/README.md) it might have messed up your project file folders path preventing you to run the project. (creating a reduntant nested file structure like ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\source\isaac_lab_tutorial...```)
+- If you had installed IsaacSim following the installation [documentation](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/pip_installation.html) (my git guide [here](https://github.com/marcelpatrick/IsaacSim-IsaacLab-installation-for-Windows-Easy-Tutorial/blob/main/README.md) it might have messed up your project file folders path preventing you to run the project. (creating a reduntant nested file structure like ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial...```)
 
 To fix it I had to move files ```pyproject.toml, setup.py``` and folders ```config, isaac_lab_tutorial, scripts``` up 2 levels to ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial```
 
