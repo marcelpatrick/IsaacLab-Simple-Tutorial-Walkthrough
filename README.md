@@ -2,7 +2,8 @@
 from: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/index.html 
 
 - This tutorial provides a clearer tutorial walkthrough than the one presented by the official Nvidia documentation for the template project **Isaac Lab Tutorial***.
-- It also fixes bugs present in the official documentation and files. 
+- It also fixes bugs present in the official documentation and files.
+- Finally, it also intends to provide clear and simple explanations for the basic concepts involved in Reinforcement Learning training for robotics in simulated environments. 
 
 ## Glossary:
 - **Simulation**: one environment. Is the physics engine running the virtual world frame-by-frame
