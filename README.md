@@ -800,7 +800,7 @@ Objective: just give the AI a reward for two things:
      - If they are perfectly misaligned (pointing opposite ways), the inner product is -1.
      - If they are at a 90° angle (perpendicular), the inner product is 0.
     
-```
+```python
 def _get_rewards(self) -> torch.Tensor:
     # reward for forward speed in robot frame
     forward_reward = self.robot.data.root_com_lin_vel_b[:,0].reshape(-1,1)
@@ -839,7 +839,7 @@ Also, when I ran train.py I got the error "ImportError: cannot import name 'dump
 
 - Had to make these changes to train.py IN ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial\scripts\skrl```
 
-```
+```python
 # -------- CHANGES to fix error "ImportError: cannot import name 'dump_pickle' from 'isaaclab.utils.io'"
 
 # --------- COMMENTED ORIGINAL CODE
