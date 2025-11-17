@@ -1,6 +1,9 @@
 # IsaacLab-Simple-Tutorial-Walkthrough
 from: https://isaac-sim.github.io/IsaacLab/main/source/setup/walkthrough/index.html 
 
+- This tutorial provides a clearer tutorial walkthrough than the one presented by the official Nvidia documentation for the template project **Isaac Lab Tutorial***.
+- It also fixes bugs present in the official documentation and files. 
+
 ## Glossary:
 - **Simulation**: one environment. Is the physics engine running the virtual world frame-by-frame
   - **Scene**: the level blueprint, the stage, a description or template for rendering the simulation world.
