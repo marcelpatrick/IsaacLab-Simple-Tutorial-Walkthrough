@@ -57,8 +57,9 @@ b) **TASKS** file (IsaacLabTutorialEnv): What tasks and actions to perform to le
   - Constrains: eg: accumulates too much torque (eg: trying to lift a box that is too heavy for him, keeps adding more torque and the arm doesn't move)
 
 c) **LEARN*** Training Hyperparameters: How to learn it?
-- if running SKRL: leave in a trainign script under ```scripts/skrl/train.py```
-- if running RSL-RL: live in a YAML file usually ```rsl_rl_cfg/ppo.yaml```
+- This is where the hyperparameter are located:
+- if running SKRL library: they are inside a training script under ```scripts/skrl/train.py```
+- if running RSL-RL library: they are in a YAML file usually in ```rsl_rl_cfg/ppo.yaml```
 
 
 ### 1.1- Classes and Configs: Environment Configuration: isaac_lab_tutorial_env_cfg.py
