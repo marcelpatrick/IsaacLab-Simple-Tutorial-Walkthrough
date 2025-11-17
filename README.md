@@ -534,9 +534,6 @@ def _reset_idx(self, env_ids: Sequence[int] | None):
   -   indicating which scenes need to be reset, and resetting them
 
 
------------------------------ STOPPED HERE ------------------------------------
-
-
 ## 3- Training the Jetbot: Ground Truth ```isaac_lab_tutorial_env.py```
 - Use the RL algorithm to train the robot's policy according to the reward function: As a user, we would like to be able to specify the desired direction for the Jetbot to drive, and have the wheels turn such that the robot drives in that specified direction as fast as possible.
 
