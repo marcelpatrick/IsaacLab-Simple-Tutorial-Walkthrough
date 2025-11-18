@@ -829,7 +829,7 @@ It should open IsaacSim, render the environment and robots and start training. I
 # Issues
 
 ## Wrong folder paths
-- If you had installed IsaacSim following the installation [documentation](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/pip_installation.html) (my git guide [here](https://github.com/marcelpatrick/IsaacSim-IsaacLab-installation-for-Windows-Easy-Tutorial/blob/main/README.md) it might have messed up your project file folders path preventing you to run the project. (creating a reduntant nested file structure like ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial...```)
+- If you had installed IsaacSim following the installation [documentation](https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/pip_installation.html) (my git guide [here](https://github.com/marcelpatrick/IsaacSim-IsaacLab-installation-for-Windows-Easy-Tutorial/blob/main/README.md)), it might have messed up your project file folders path preventing you to run the project. (creating a reduntant nested file structure like ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial...```)
 
 To fix it I had to move files ```pyproject.toml, setup.py``` and folders ```config, isaac_lab_tutorial, scripts``` up 2 levels to ```C:\Users\[YOUR USER]\IsaacLab\source\isaac_lab_tutorial```
 
