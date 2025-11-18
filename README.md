@@ -800,6 +800,12 @@ Objective: just give the AI a reward for two things:
      - If they are perfectly misaligned (pointing opposite ways), the inner product is -1.
      - If they are at a 90° angle (perpendicular), the inner product is 0.
     
+We could do this by saying that the total reward = forward reward AND alignment reward, or:
+
+```total_reward = forward_reward*alignment_reward```
+
+The problem with this is that if the robot walks backwards towards a target behing it you have two negative reward functions that, if multiplied, make up a positive reward. (The robot would learn to walk backwards). To avoid this is better to use an Exponential function (torch.exp). This keeps the alignment value positive but near zero when misaligned, preventing negative-negative multiplication from rewarding reverse driving:
+    
 ```python
 def _get_rewards(self) -> torch.Tensor:
     # reward for forward speed in robot frame
